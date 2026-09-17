@@ -102,6 +102,7 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin
         if (_capabilities.HasKGlobalAccel && _accel is not null)
         {
             _commands.AddRange(WindowCommands.Create(_accel, _capabilities));
+            _commands.AddRange(OverviewCommands.Create(_accel, _capabilities));
         }
 
         if (_capabilities.HasKWin && _kwin is not null && _desktops is not null)
