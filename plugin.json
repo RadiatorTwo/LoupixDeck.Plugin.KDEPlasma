@@ -1,12 +1,12 @@
 {
   "id": "kdeplasma",
-  "name": "KDEPlasma",
+  "name": "KDE Plasma",
   "version": "1.0.0",
   "sdkVersion": "1.23",
   "entryAssembly": "LoupixDeck.Plugin.KDEPlasma.dll",
-  "platform": "All",
-  "author": "",
-  "description": "",
-  "projectUrl": "",
+  "platform": "Linux",
+  "author": "RadiatorTwo",
+  "description": "KDE Plasma desktop control: virtual desktops, window actions, Activities, Overview, Night Color and session commands.",
+  "projectUrl": "https://github.com/RadiatorTwo/LoupixDeck.Plugin.KDEPlasma",
   "iconFile": ""
 }

@@ -15,6 +15,7 @@
     <PackageReference Include="LoupixDeck.PluginSdk" Version="1.23.0">
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
+    <PackageReference Include="Tmds.DBus.Protocol" Version="0.95.1" />
   </ItemGroup>
 
 </Project>
