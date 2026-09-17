@@ -108,6 +108,7 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin
         if (_capabilities.HasKWin && _kwin is not null && _desktops is not null)
         {
             _commands.AddRange(VirtualDesktopCommands.Create(_kwin, _desktops));
+            _commands.Add(ShowDesktopCommand.Create(_kwin));
         }
     }
 
