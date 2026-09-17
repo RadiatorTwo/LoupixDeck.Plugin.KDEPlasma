@@ -110,7 +110,8 @@ internal sealed class KWinClient(KdeSession session) : IDisposable
             Interface,
             "showDesktop",
             "b",
-            (ref MessageWriter writer) => writer.WriteBool(show));
+            (ref MessageWriter writer) => writer.WriteBool(show),
+            noReply: true);
     }
 
     /// <summary>Toggles Show Desktop based on the cached state.</summary>

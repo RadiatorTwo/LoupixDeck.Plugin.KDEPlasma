@@ -39,18 +39,30 @@ internal sealed class DBusClient(DBusConnection connection, IPluginLogger logger
         set => _timeoutMilliseconds = Math.Clamp(value, MinimumTimeoutMilliseconds, MaximumTimeoutMilliseconds);
     }
 
-    /// <summary>Calls a method and ignores the reply. Returns false when the call failed.</summary>
+    /// <summary>
+    /// Calls a method and ignores the reply. Returns false when the call failed.
+    /// Methods KDE declares as no-reply must pass <paramref name="noReply"/>, otherwise the call
+    /// waits for a reply that never arrives and runs into the timeout.
+    /// </summary>
     public async Task<bool> CallAsync(
         string destination,
         string path,
         string @interface,
         string member,
         string? signature = null,
-        DBusArgumentWriter? writeArguments = null)
+        DBusArgumentWriter? writeArguments = null,
+        bool noReply = false)
     {
         try
         {
-            MessageBuffer message = CreateCall(destination, path, @interface, member, signature, writeArguments);
+            MessageBuffer message = CreateCall(destination, path, @interface, member, signature, writeArguments, noReply);
+
+            if (noReply)
+            {
+                // A no-reply method never answers, so awaiting a reply would always time out.
+                return Connection.TrySendMessage(message);
+            }
+
             await Connection.CallMethodAsync(message).WaitAsync(Timeout).ConfigureAwait(false);
             return true;
         }
@@ -74,7 +86,7 @@ internal sealed class DBusClient(DBusConnection connection, IPluginLogger logger
     {
         try
         {
-            MessageBuffer message = CreateCall(destination, path, @interface, member, signature, writeArguments);
+            MessageBuffer message = CreateCall(destination, path, @interface, member, signature, writeArguments, noReply: false);
             return await Connection.CallMethodAsync(message, reader, null).WaitAsync(Timeout).ConfigureAwait(false);
         }
         catch (Exception ex)
@@ -146,9 +158,15 @@ internal sealed class DBusClient(DBusConnection connection, IPluginLogger logger
                 reader,
                 (Notification<T> notification) =>
                 {
-                    if (notification.Exception is not null)
+                    // Exception is only readable on a completion notification, and reading it on a
+                    // value notification throws inside the read loop, which tears down the connection.
+                    if (notification.IsCompletion)
                     {
-                        Warn(sender, path, signal, notification.Exception);
+                        if (notification.Exception is not null)
+                        {
+                            Warn(sender, path, signal, notification.Exception);
+                        }
+
                         return;
                     }
 
@@ -214,12 +232,19 @@ internal sealed class DBusClient(DBusConnection connection, IPluginLogger logger
         string @interface,
         string member,
         string? signature,
-        DBusArgumentWriter? writeArguments)
+        DBusArgumentWriter? writeArguments,
+        bool noReply)
     {
         MessageWriter writer = Connection.GetMessageWriter();
         try
         {
-            writer.WriteMethodCallHeader(destination, path, @interface, member, signature);
+            writer.WriteMethodCallHeader(
+                destination,
+                path,
+                @interface,
+                member,
+                signature,
+                noReply ? MessageFlags.NoReplyExpected : MessageFlags.None);
             writeArguments?.Invoke(ref writer);
             return writer.CreateMessage();
         }
