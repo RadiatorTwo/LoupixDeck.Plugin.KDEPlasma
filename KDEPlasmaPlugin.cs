@@ -2,7 +2,7 @@ using LoupixDeck.PluginSdk;
 
 namespace LoupixDeck.Plugin.KDEPlasma;
 
-public sealed class KDEPlasmaPlugin : LoupixPlugin
+public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor
 {
     private static readonly TimeSpan StartupTimeout = TimeSpan.FromSeconds(2);
 
@@ -67,6 +67,66 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin
     }
 
     public override IEnumerable<IPluginCommand> GetCommands() => _commands;
+
+    public override IReadOnlyList<CommandGroupDescriptor> GetCommandGroups() =>
+    [
+        new CommandGroupDescriptor
+        {
+            Group = KdeCommands.Group,
+            Description = "Virtual desktops, windows, Activities, Overview, Night Color and session"
+        }
+    ];
+
+    /// <summary>
+    /// Contributes the live desktop and Activity lists. Both bind the id-based commands, so a
+    /// button keeps working after the desktop or Activity was renamed.
+    /// </summary>
+    public Task<IReadOnlyList<MenuNode>> GetMenuNodes(ButtonTargets target)
+    {
+        List<MenuNode> nodes = [];
+
+        VirtualDesktopClient? desktops = _desktops;
+        if (desktops is not null && desktops.HasState)
+        {
+            List<MenuNode> children = [];
+            foreach (VirtualDesktop desktop in desktops.Desktops)
+            {
+                children.Add(new MenuNode
+                {
+                    Name = desktop.Name.Length > 0 ? desktop.Name : $"Desktop {desktop.Number}",
+                    CommandName = KdeCommands.Prefix + "DesktopSelect",
+                    Parameters = new Dictionary<string, string> { ["desktopId"] = desktop.Id }
+                });
+            }
+
+            if (children.Count > 0)
+            {
+                nodes.Add(new MenuNode { Name = "Virtual Desktops", Children = children });
+            }
+        }
+
+        ActivityManagerClient? activities = _activities;
+        if (activities is not null && activities.HasState)
+        {
+            List<MenuNode> children = [];
+            foreach (KdeActivity activity in activities.Activities)
+            {
+                children.Add(new MenuNode
+                {
+                    Name = activity.Name,
+                    CommandName = KdeCommands.Prefix + "ActivitySelect",
+                    Parameters = new Dictionary<string, string> { ["activityId"] = activity.Id }
+                });
+            }
+
+            if (children.Count > 0)
+            {
+                nodes.Add(new MenuNode { Name = "Activities", Children = children });
+            }
+        }
+
+        return Task.FromResult<IReadOnlyList<MenuNode>>(nodes);
+    }
 
     /// <summary>Whether desktop buttons show names instead of numbers. Becomes a setting later.</summary>
     private bool ShowDesktopNames => true;
