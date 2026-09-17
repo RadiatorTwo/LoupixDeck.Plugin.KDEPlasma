@@ -6,8 +6,18 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin
 {
     private static readonly TimeSpan StartupTimeout = TimeSpan.FromSeconds(2);
 
+    private readonly List<IPluginCommand> _commands = [];
+
     private KdeSession? _session;
     private KdeCapabilities _capabilities = KdeCapabilities.Empty;
+    private KWinClient? _kwin;
+    private VirtualDesktopClient? _desktops;
+    private ActivityManagerClient? _activities;
+    private NightLightClient? _nightLight;
+    private KGlobalAccelClient? _accel;
+    private ScreenSaverClient? _screenSaver;
+    private KRunnerClient? _krunner;
+    private PlasmaVersionClient? _plasmaVersion;
 
     public override PluginMetadata Metadata { get; } = new()
     {
@@ -35,21 +45,84 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin
             host.Logger.Info(
                 $"KDE Plasma: Plasma {(_capabilities.PlasmaVersion.Length > 0 ? _capabilities.PlasmaVersion : "unknown")}, " +
                 $"{_capabilities.KWinShortcuts.Count} KWin shortcuts, effects: {string.Join(", ", _capabilities.SupportedEffects)}.");
+
+            CreateClients(session);
+            BuildCommands();
+
+            // Seeding the caches is I/O, so it must not hold up the host startup.
+            _ = Task.Run(StartClientsAsync);
         }
         catch (Exception ex)
         {
             host.Logger.Info($"KDE Plasma: initialization failed ({ex.Message}), the plugin stays inactive.");
-            session.Dispose();
-            _session = null;
+            Shutdown();
         }
     }
 
-    public override IEnumerable<IPluginCommand> GetCommands() => [];
+    public override IEnumerable<IPluginCommand> GetCommands() => _commands;
 
     public override void Shutdown()
     {
+        _desktops?.Dispose();
+        _activities?.Dispose();
+        _nightLight?.Dispose();
+        _kwin?.Dispose();
         _session?.Dispose();
+
+        _desktops = null;
+        _activities = null;
+        _nightLight = null;
+        _kwin = null;
+        _accel = null;
+        _screenSaver = null;
+        _krunner = null;
+        _plasmaVersion = null;
         _session = null;
+
+        _commands.Clear();
         base.Shutdown();
+    }
+
+    private void CreateClients(KdeSession session)
+    {
+        _accel = new KGlobalAccelClient(session);
+        _kwin = new KWinClient(session);
+        _desktops = new VirtualDesktopClient(session);
+        _activities = new ActivityManagerClient(session);
+        _nightLight = new NightLightClient(session);
+        _screenSaver = new ScreenSaverClient(session);
+        _krunner = new KRunnerClient(session);
+        _plasmaVersion = new PlasmaVersionClient(session);
+    }
+
+    private void BuildCommands()
+    {
+        _commands.Clear();
+
+        if (_capabilities.HasKGlobalAccel && _accel is not null)
+        {
+            _commands.AddRange(WindowCommands.Create(_accel, _capabilities));
+        }
+    }
+
+    private async Task StartClientsAsync()
+    {
+        if (_capabilities.HasKWin)
+        {
+            await _kwin!.StartAsync().ConfigureAwait(false);
+            await _desktops!.StartAsync().ConfigureAwait(false);
+        }
+
+        if (_capabilities.HasActivities)
+        {
+            await _activities!.StartAsync().ConfigureAwait(false);
+        }
+
+        if (_capabilities.NightLightAvailable)
+        {
+            await _nightLight!.StartAsync().ConfigureAwait(false);
+        }
+
+        await _plasmaVersion!.SeedAsync().ConfigureAwait(false);
     }
 }
