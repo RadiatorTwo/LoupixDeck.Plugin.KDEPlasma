@@ -95,4 +95,5 @@ dotnet build LoupixDeck.Plugin.KDEPlasma.csproj -c Release
 
 The output lands in `bin/Release/` (no target framework suffix). For a local test, copy the DLLs
 together with `plugin.json` into `~/.config/LoupixDeck/plugins/kdeplasma/` and restart LoupixDeck.
-`release.ps1` packages the same files into `dist/kdeplasma/`.
+`release.ps1` (PowerShell) and `release.sh` (bash) package the same files into `dist/kdeplasma/`;
+both take an optional output root as their only argument.
