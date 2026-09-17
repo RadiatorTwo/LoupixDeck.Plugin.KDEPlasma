@@ -61,6 +61,9 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin
 
     public override IEnumerable<IPluginCommand> GetCommands() => _commands;
 
+    /// <summary>Whether desktop buttons show names instead of numbers. Becomes a setting later.</summary>
+    private bool ShowDesktopNames => true;
+
     public override void Shutdown()
     {
         _desktops?.Dispose();
@@ -109,11 +112,18 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin
         {
             _commands.AddRange(VirtualDesktopCommands.Create(_kwin, _desktops));
             _commands.Add(ShowDesktopCommand.Create(_kwin));
+            _commands.AddRange(KdeDisplayCommands.CreateDesktopDisplays(_desktops, () => ShowDesktopNames));
         }
 
         if (_capabilities.HasActivities && _activities is not null)
         {
             _commands.AddRange(ActivityCommands.Create(_activities));
+            _commands.Add(KdeDisplayCommands.CreateActivityDisplay(_activities));
+        }
+
+        if (_plasmaVersion is not null)
+        {
+            _commands.Add(KdeDisplayCommands.CreateVersionDisplay(_plasmaVersion));
         }
 
         if (_screenSaver is not null && _krunner is not null)
