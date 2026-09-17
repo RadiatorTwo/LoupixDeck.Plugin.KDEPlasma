@@ -103,6 +103,11 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin
         {
             _commands.AddRange(WindowCommands.Create(_accel, _capabilities));
         }
+
+        if (_capabilities.HasKWin && _kwin is not null && _desktops is not null)
+        {
+            _commands.AddRange(VirtualDesktopCommands.Create(_kwin, _desktops));
+        }
     }
 
     private async Task StartClientsAsync()
