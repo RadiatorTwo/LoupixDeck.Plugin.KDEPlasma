@@ -111,6 +111,11 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin
             _commands.Add(ShowDesktopCommand.Create(_kwin));
         }
 
+        if (_capabilities.HasActivities && _activities is not null)
+        {
+            _commands.AddRange(ActivityCommands.Create(_activities));
+        }
+
         if (_screenSaver is not null && _krunner is not null)
         {
             _commands.AddRange(SessionCommands.Create(_screenSaver, _krunner, _capabilities));
