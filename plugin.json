@@ -1,0 +1,12 @@
+{
+  "id": "kdeplasma",
+  "name": "KDEPlasma",
+  "version": "1.0.0",
+  "sdkVersion": "1.23",
+  "entryAssembly": "LoupixDeck.Plugin.KDEPlasma.dll",
+  "platform": "All",
+  "author": "",
+  "description": "",
+  "projectUrl": "",
+  "iconFile": ""
+}
