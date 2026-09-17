@@ -37,6 +37,7 @@ internal static class NightColorCommands
                 CommandName = ToggleName,
                 DisplayName = "KDE: Toggle Night Color",
                 Group = KdeCommands.Group,
+                HiddenFromMenu = true,
                 States =
                 [
                     new ButtonStateDescriptor { Name = OffState, Description = "Night Color is off" },
@@ -52,7 +53,8 @@ internal static class NightColorCommands
             CommandName = StatusName,
             DisplayName = "KDE: Night Color Status",
             Group = KdeCommands.Group,
-            Description = "Shows whether Night Color is active and at which temperature"
+            Description = "Shows whether Night Color is active and at which temperature",
+            HiddenFromMenu = true
         };
 
         commands.Add(new KdeTextDisplayCommand(status, StatusUpdateInterval, () => BuildStatusText(nightLight)));

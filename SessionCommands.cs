@@ -19,7 +19,8 @@ internal static class SessionCommands
                 {
                     CommandName = KdeCommands.Prefix + "LockScreen",
                     DisplayName = "KDE: Lock Screen",
-                    Group = KdeCommands.Group
+                    Group = KdeCommands.Group,
+                    HiddenFromMenu = true
                 },
                 _ => screenSaver.LockAsync()));
         }
@@ -34,7 +35,8 @@ internal static class SessionCommands
             {
                 CommandName = KdeCommands.Prefix + "KRunner",
                 DisplayName = "KDE: Open KRunner",
-                Group = KdeCommands.Group
+                Group = KdeCommands.Group,
+                HiddenFromMenu = true
             },
             _ => krunner.DisplayAsync()));
 
@@ -46,7 +48,8 @@ internal static class SessionCommands
                 Group = KdeCommands.Group,
                 Description = "Open KRunner pre-filled with the given query",
                 ParameterTemplate = "({query})",
-                Parameters = [new CommandParameter("query", typeof(string))]
+                Parameters = [new CommandParameter("query", typeof(string))],
+                HiddenFromMenu = true
             },
             ctx =>
             {

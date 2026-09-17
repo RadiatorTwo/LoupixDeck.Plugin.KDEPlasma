@@ -84,54 +84,12 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
     ];
 
     /// <summary>
-    /// Contributes the live desktop and Activity lists. Both bind the id-based commands, so a
-    /// button keeps working after the desktop or Activity was renamed.
+    /// Contributes the whole picker tree below a single root named after the command group, so the
+    /// plugin shows up as one category with sections instead of several top-level categories.
     /// </summary>
     public Task<IReadOnlyList<MenuNode>> GetMenuNodes(ButtonTargets target)
     {
-        List<MenuNode> nodes = [];
-
-        VirtualDesktopClient? desktops = _desktops;
-        if (desktops is not null && desktops.HasState)
-        {
-            List<MenuNode> children = [];
-            foreach (VirtualDesktop desktop in desktops.Desktops)
-            {
-                children.Add(new MenuNode
-                {
-                    Name = desktop.Name.Length > 0 ? desktop.Name : $"Desktop {desktop.Number}",
-                    CommandName = KdeCommands.Prefix + "DesktopSelect",
-                    Parameters = new Dictionary<string, string> { ["desktopId"] = desktop.Id }
-                });
-            }
-
-            if (children.Count > 0)
-            {
-                nodes.Add(new MenuNode { Name = "Virtual Desktops", Children = children });
-            }
-        }
-
-        ActivityManagerClient? activities = _activities;
-        if (activities is not null && activities.HasState)
-        {
-            List<MenuNode> children = [];
-            foreach (KdeActivity activity in activities.Activities)
-            {
-                children.Add(new MenuNode
-                {
-                    Name = activity.Name,
-                    CommandName = KdeCommands.Prefix + "ActivitySelect",
-                    Parameters = new Dictionary<string, string> { ["activityId"] = activity.Id }
-                });
-            }
-
-            if (children.Count > 0)
-            {
-                nodes.Add(new MenuNode { Name = "Activities", Children = children });
-            }
-        }
-
-        return Task.FromResult<IReadOnlyList<MenuNode>>(nodes);
+        return Task.FromResult(KdeMenuTree.Build(_commands, _desktops, _activities));
     }
 
     public IReadOnlyList<PluginSettingDescriptor> SettingsSchema => KdeSettingsPage.BuildSchema();

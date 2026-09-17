@@ -17,7 +17,8 @@ internal static class ActivityCommands
                 {
                     CommandName = KdeCommands.Prefix + "ActivityNext",
                     DisplayName = "KDE: Next Activity",
-                    Group = KdeCommands.Group
+                    Group = KdeCommands.Group,
+                    HiddenFromMenu = true
                 },
                 _ => activities.NextAsync()),
 
@@ -26,7 +27,8 @@ internal static class ActivityCommands
                 {
                     CommandName = KdeCommands.Prefix + "ActivityPrevious",
                     DisplayName = "KDE: Previous Activity",
-                    Group = KdeCommands.Group
+                    Group = KdeCommands.Group,
+                    HiddenFromMenu = true
                 },
                 _ => activities.PreviousAsync()),
 
@@ -51,7 +53,8 @@ internal static class ActivityCommands
                     Group = KdeCommands.Group,
                     Description = "Switch to the Activity with the given name",
                     ParameterTemplate = "({name})",
-                    Parameters = [new CommandParameter("name", typeof(string))]
+                    Parameters = [new CommandParameter("name", typeof(string))],
+                    HiddenFromMenu = true
                 },
                 ctx => SwitchByNameAsync(ctx, activities))
         ];

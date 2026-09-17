@@ -33,7 +33,8 @@ internal static class KdeDisplayCommands
                     CommandName = CurrentDesktopName,
                     DisplayName = "KDE: Current Desktop",
                     Group = KdeCommands.Group,
-                    Description = "Shows the current virtual desktop"
+                    Description = "Shows the current virtual desktop",
+                    HiddenFromMenu = true
                 },
                 DesktopInterval,
                 () => DescribeCurrentDesktop(desktops, showDesktopNames())),
@@ -44,7 +45,8 @@ internal static class KdeDisplayCommands
                     CommandName = CurrentDesktopNameName,
                     DisplayName = "KDE: Desktop Name",
                     Group = KdeCommands.Group,
-                    Description = "Shows the name of the current virtual desktop"
+                    Description = "Shows the name of the current virtual desktop",
+                    HiddenFromMenu = true
                 },
                 DesktopInterval,
                 () => desktops.Current?.Name ?? KdeTextDisplayCommand.UnknownText),
@@ -55,7 +57,8 @@ internal static class KdeDisplayCommands
                     CommandName = DesktopCountName,
                     DisplayName = "KDE: Desktop Count",
                     Group = KdeCommands.Group,
-                    Description = "Shows how many virtual desktops exist"
+                    Description = "Shows how many virtual desktops exist",
+                    HiddenFromMenu = true
                 },
                 SlowInterval,
                 () => desktops.HasState
@@ -72,7 +75,8 @@ internal static class KdeDisplayCommands
                 CommandName = CurrentActivityName,
                 DisplayName = "KDE: Current Activity",
                 Group = KdeCommands.Group,
-                Description = "Shows the current Activity"
+                Description = "Shows the current Activity",
+                HiddenFromMenu = true
             },
             SlowInterval,
             () => activities.Current?.Name ?? KdeTextDisplayCommand.UnknownText);
@@ -86,7 +90,8 @@ internal static class KdeDisplayCommands
                 CommandName = PlasmaVersionName,
                 DisplayName = "KDE: Plasma Version",
                 Group = KdeCommands.Group,
-                Description = "Shows the running Plasma version"
+                Description = "Shows the running Plasma version",
+                HiddenFromMenu = true
             },
             VersionInterval,
             () => version.Version.Length > 0 ? version.Version : KdeTextDisplayCommand.UnknownText);

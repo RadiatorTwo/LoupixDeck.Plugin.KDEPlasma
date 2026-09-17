@@ -10,7 +10,11 @@ that is not KDE it loads without registering any command.
 
 ## Commands
 
-All commands live in the `KDE Plasma` group.
+All commands live in the single `KDE Plasma` category. Inside it the picker shows the sections
+`Virtual Desktops`, `Active Window`, `Activities`, `Overview and Desktop`, `Night Color`, `Session`
+and `Status`, plus the live desktop and Activity lists. The commands themselves are marked
+`HiddenFromMenu`, so each one appears exactly once — in its section — instead of as a flat list of
+roughly fifty entries.
 
 ### Virtual desktops
 

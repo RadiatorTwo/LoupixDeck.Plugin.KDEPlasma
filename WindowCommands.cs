@@ -76,7 +76,8 @@ internal static class WindowCommands
         {
             CommandName = KdeCommands.Prefix + name,
             DisplayName = displayName,
-            Group = KdeCommands.Group
+            Group = KdeCommands.Group,
+            HiddenFromMenu = true
         };
 
         commands.Add(new KdeShortcutCommand(descriptor, accel, actionName));
@@ -109,7 +110,8 @@ internal static class WindowCommands
             Group = KdeCommands.Group,
             Description = description,
             ParameterTemplate = parameterTemplate,
-            Parameters = [new CommandParameter(parameterName, typeof(int)) { DefaultValue = defaultValue }]
+            Parameters = [new CommandParameter(parameterName, typeof(int)) { DefaultValue = defaultValue }],
+            HiddenFromMenu = true
         };
 
         commands.Add(new KdeShortcutCommand(descriptor, accel, parameters =>

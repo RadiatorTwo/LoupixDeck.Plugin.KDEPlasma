@@ -43,7 +43,8 @@ internal static class OverviewCommands
         {
             CommandName = KdeCommands.Prefix + name,
             DisplayName = displayName,
-            Group = KdeCommands.Group
+            Group = KdeCommands.Group,
+            HiddenFromMenu = true
         };
 
         commands.Add(new KdeShortcutCommand(descriptor, accel, actionName));

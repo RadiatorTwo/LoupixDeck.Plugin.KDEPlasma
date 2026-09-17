@@ -20,6 +20,7 @@ internal static class ShowDesktopCommand
             DisplayName = "KDE: Show Desktop",
             Group = KdeCommands.Group,
             Description = "Show the desktop and hide all windows",
+            HiddenFromMenu = true,
             States =
             [
                 new ButtonStateDescriptor { Name = OffState, Description = "Windows are visible" },

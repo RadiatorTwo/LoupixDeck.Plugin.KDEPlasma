@@ -28,7 +28,8 @@ internal static class VirtualDesktopCommands
                 {
                     CommandName = KdeCommands.Prefix + "DesktopNext",
                     DisplayName = "KDE: Next Desktop",
-                    Group = KdeCommands.Group
+                    Group = KdeCommands.Group,
+                    HiddenFromMenu = true
                 },
                 _ => kwin.NextDesktopAsync()),
 
@@ -37,7 +38,8 @@ internal static class VirtualDesktopCommands
                 {
                     CommandName = KdeCommands.Prefix + "DesktopPrevious",
                     DisplayName = "KDE: Previous Desktop",
-                    Group = KdeCommands.Group
+                    Group = KdeCommands.Group,
+                    HiddenFromMenu = true
                 },
                 _ => kwin.PreviousDesktopAsync()),
 
@@ -62,7 +64,8 @@ internal static class VirtualDesktopCommands
                     Group = KdeCommands.Group,
                     Description = "Switch to the virtual desktop with the given name",
                     ParameterTemplate = "({name})",
-                    Parameters = [new CommandParameter("name", typeof(string))]
+                    Parameters = [new CommandParameter("name", typeof(string))],
+                    HiddenFromMenu = true
                 },
                 ctx => SwitchToNameAsync(ctx, desktops))
         ];
@@ -82,6 +85,7 @@ internal static class VirtualDesktopCommands
             CommandName = SwitchCommandName(number),
             DisplayName = $"KDE: Switch to Desktop {number.ToString(CultureInfo.InvariantCulture)}",
             Group = KdeCommands.Group,
+            HiddenFromMenu = true,
             States =
             [
                 new ButtonStateDescriptor { Name = InactiveState, Description = "The desktop is not the current one" },
