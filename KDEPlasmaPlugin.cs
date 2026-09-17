@@ -2,7 +2,7 @@ using LoupixDeck.PluginSdk;
 
 namespace LoupixDeck.Plugin.KDEPlasma;
 
-public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor
+public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSettingsPage
 {
     private static readonly TimeSpan StartupTimeout = TimeSpan.FromSeconds(2);
 
@@ -20,6 +20,8 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor
     private PlasmaVersionClient? _plasmaVersion;
     private KdeStateBinder? _binder;
     private KdeFolderGrid? _grid;
+    private KdeSettingsStore? _settings;
+    private IPluginHost? _host;
 
     public override PluginMetadata Metadata { get; } = new()
     {
@@ -33,6 +35,9 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor
 
     public override void Initialize(IPluginHost host)
     {
+        _host = host;
+        _settings = new KdeSettingsStore(host.Settings);
+
         KdeSession session = new(host.Logger);
         _session = session;
 
@@ -49,6 +54,7 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor
                 $"{_capabilities.KWinShortcuts.Count} KWin shortcuts, effects: {string.Join(", ", _capabilities.SupportedEffects)}.");
 
             CreateClients(session);
+            ApplySettings();
             _grid = KdeFolderGridResolver.Resolve(host);
             BuildCommands();
 
@@ -128,8 +134,43 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor
         return Task.FromResult<IReadOnlyList<MenuNode>>(nodes);
     }
 
-    /// <summary>Whether desktop buttons show names instead of numbers. Becomes a setting later.</summary>
-    private bool ShowDesktopNames => true;
+    public IReadOnlyList<PluginSettingDescriptor> SettingsSchema => KdeSettingsPage.BuildSchema();
+
+    public IReadOnlyList<PluginSettingAction> SettingsActions =>
+    [
+        new PluginSettingAction
+        {
+            Label = "Test detected capabilities",
+            Invoke = () => KdeSettingsPage.TestCapabilitiesAsync(_session, _desktops, _activities, _nightLight)
+        }
+    ];
+
+    public void OnSettingsSaved()
+    {
+        ApplySettings();
+
+        IPluginHost? host = _host;
+        if (host is null)
+        {
+            return;
+        }
+
+        host.RequestButtonRefresh(KdeDisplayCommands.CurrentDesktopName);
+        host.RequestButtonRefresh(KdeDisplayCommands.CurrentDesktopNameName);
+        host.RequestButtonRefresh(KdeDisplayCommands.DesktopFolderName);
+    }
+
+    /// <summary>Whether desktop buttons show names instead of numbers.</summary>
+    private bool ShowDesktopNames => _settings?.ShowDesktopNames ?? KdeSettingsStore.DefaultDesktopNames;
+
+    private void ApplySettings()
+    {
+        DBusClient? client = _session?.Client;
+        if (client is not null && _settings is not null)
+        {
+            client.TimeoutMilliseconds = _settings.TimeoutMilliseconds;
+        }
+    }
 
     public override void Shutdown()
     {
