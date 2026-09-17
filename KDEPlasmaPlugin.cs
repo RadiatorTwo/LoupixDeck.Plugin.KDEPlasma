@@ -18,6 +18,7 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin
     private ScreenSaverClient? _screenSaver;
     private KRunnerClient? _krunner;
     private PlasmaVersionClient? _plasmaVersion;
+    private KdeStateBinder? _binder;
 
     public override PluginMetadata Metadata { get; } = new()
     {
@@ -49,6 +50,10 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin
             CreateClients(session);
             BuildCommands();
 
+            _binder = new KdeStateBinder(host, _kwin!, _desktops!, _activities!, _nightLight!);
+            _binder.Start();
+            session.ServiceOwnerChanged += OnServiceOwnerChanged;
+
             // Seeding the caches is I/O, so it must not hold up the host startup.
             _ = Task.Run(StartClientsAsync);
         }
@@ -66,6 +71,13 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin
 
     public override void Shutdown()
     {
+        if (_session is not null)
+        {
+            _session.ServiceOwnerChanged -= OnServiceOwnerChanged;
+        }
+
+        _binder?.Dispose();
+        _binder = null;
         _desktops?.Dispose();
         _activities?.Dispose();
         _nightLight?.Dispose();
@@ -156,5 +168,17 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin
         }
 
         await _plasmaVersion!.SeedAsync().ConfigureAwait(false);
+        _binder?.ReplayAll();
+    }
+
+    private void OnServiceOwnerChanged(string service, bool hasOwner)
+    {
+        if (!hasOwner)
+        {
+            return;
+        }
+
+        // The service came back, so every cache has to be read again before the states are replayed.
+        _ = Task.Run(StartClientsAsync);
     }
 }
