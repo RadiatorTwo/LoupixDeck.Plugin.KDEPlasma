@@ -110,6 +110,11 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin
             _commands.AddRange(VirtualDesktopCommands.Create(_kwin, _desktops));
             _commands.Add(ShowDesktopCommand.Create(_kwin));
         }
+
+        if (_accel is not null && _nightLight is not null)
+        {
+            _commands.AddRange(NightColorCommands.Create(_accel, _nightLight, _capabilities));
+        }
     }
 
     private async Task StartClientsAsync()
