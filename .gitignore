@@ -423,3 +423,5 @@ LoupixDeck.PluginSdk/nupkg/
 
 # Local demo material (not part of the repo)
 /docs/demo/
+# Plugin release output
+/dist/
