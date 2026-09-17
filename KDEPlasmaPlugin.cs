@@ -171,6 +171,28 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin
         _binder?.ReplayAll();
     }
 
+    private async Task ReseedClientsAsync()
+    {
+        if (_capabilities.HasKWin)
+        {
+            await _kwin!.SeedAsync().ConfigureAwait(false);
+            await _desktops!.SeedAsync().ConfigureAwait(false);
+        }
+
+        if (_capabilities.HasActivities)
+        {
+            await _activities!.SeedAsync().ConfigureAwait(false);
+        }
+
+        if (_capabilities.NightLightAvailable)
+        {
+            await _nightLight!.SeedAsync().ConfigureAwait(false);
+        }
+
+        await _plasmaVersion!.SeedAsync().ConfigureAwait(false);
+        _binder?.ReplayAll();
+    }
+
     private void OnServiceOwnerChanged(string service, bool hasOwner)
     {
         if (!hasOwner)
@@ -179,6 +201,7 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin
         }
 
         // The service came back, so every cache has to be read again before the states are replayed.
-        _ = Task.Run(StartClientsAsync);
+        // Only the caches are refreshed here; the signal subscriptions survive an owner change.
+        _ = Task.Run(ReseedClientsAsync);
     }
 }
