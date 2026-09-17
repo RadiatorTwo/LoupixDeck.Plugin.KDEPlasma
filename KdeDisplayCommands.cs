@@ -14,6 +14,8 @@ internal static class KdeDisplayCommands
     public const string DesktopCountName = KdeCommands.Prefix + "DesktopCount";
     public const string CurrentActivityName = KdeCommands.Prefix + "CurrentActivity";
     public const string PlasmaVersionName = KdeCommands.Prefix + "PlasmaVersion";
+    public const string DesktopFolderName = KdeCommands.Prefix + "DesktopFolder";
+    public const string ActivityFolderName = KdeCommands.Prefix + "ActivityFolder";
 
     private static readonly TimeSpan DesktopInterval = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan SlowInterval = TimeSpan.FromSeconds(5);
@@ -88,6 +90,49 @@ internal static class KdeDisplayCommands
             },
             VersionInterval,
             () => version.Version.Length > 0 ? version.Version : KdeTextDisplayCommand.UnknownText);
+    }
+
+    /// <summary>The button that shows the current desktop and opens the virtual desktop folder.</summary>
+    public static IPluginCommand CreateDesktopFolder(
+        VirtualDesktopClient desktops,
+        KdeFolderGrid grid,
+        Func<bool> showDesktopNames)
+    {
+        return new KdeTextDisplayCommand(
+            new CommandDescriptor
+            {
+                CommandName = DesktopFolderName,
+                DisplayName = "KDE: Virtual Desktops",
+                Group = KdeCommands.Group,
+                Description = "Opens a folder with all virtual desktops"
+            },
+            DesktopInterval,
+            () => DescribeCurrentDesktop(desktops, showDesktopNames()),
+            ctx =>
+            {
+                ctx.Host.OpenFolder(new VirtualDesktopFolderProvider(desktops, grid, showDesktopNames));
+                return Task.CompletedTask;
+            });
+    }
+
+    /// <summary>The button that shows the current Activity and opens the Activities folder.</summary>
+    public static IPluginCommand CreateActivityFolder(ActivityManagerClient activities, KdeFolderGrid grid)
+    {
+        return new KdeTextDisplayCommand(
+            new CommandDescriptor
+            {
+                CommandName = ActivityFolderName,
+                DisplayName = "KDE: Activities",
+                Group = KdeCommands.Group,
+                Description = "Opens a folder with all Activities"
+            },
+            SlowInterval,
+            () => activities.Current?.Name ?? KdeTextDisplayCommand.UnknownText,
+            ctx =>
+            {
+                ctx.Host.OpenFolder(new ActivityFolderProvider(activities, grid));
+                return Task.CompletedTask;
+            });
     }
 
     private static string DescribeCurrentDesktop(VirtualDesktopClient desktops, bool useNames)

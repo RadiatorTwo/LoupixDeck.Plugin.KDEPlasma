@@ -73,6 +73,7 @@ internal sealed class KdeStateBinder(
             host.RequestButtonRefresh(KdeDisplayCommands.CurrentDesktopName);
             host.RequestButtonRefresh(KdeDisplayCommands.CurrentDesktopNameName);
             host.RequestButtonRefresh(KdeDisplayCommands.DesktopCountName);
+            host.RequestButtonRefresh(KdeDisplayCommands.DesktopFolderName);
 
             if (!desktops.HasState)
             {
@@ -92,7 +93,11 @@ internal sealed class KdeStateBinder(
 
     private void OnActivitiesChanged()
     {
-        Dispatch(() => host.RequestButtonRefresh(KdeDisplayCommands.CurrentActivityName));
+        Dispatch(() =>
+        {
+            host.RequestButtonRefresh(KdeDisplayCommands.CurrentActivityName);
+            host.RequestButtonRefresh(KdeDisplayCommands.ActivityFolderName);
+        });
     }
 
     private void OnNightLightChanged()

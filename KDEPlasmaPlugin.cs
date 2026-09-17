@@ -19,6 +19,7 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin
     private KRunnerClient? _krunner;
     private PlasmaVersionClient? _plasmaVersion;
     private KdeStateBinder? _binder;
+    private KdeFolderGrid? _grid;
 
     public override PluginMetadata Metadata { get; } = new()
     {
@@ -48,6 +49,7 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin
                 $"{_capabilities.KWinShortcuts.Count} KWin shortcuts, effects: {string.Join(", ", _capabilities.SupportedEffects)}.");
 
             CreateClients(session);
+            _grid = KdeFolderGridResolver.Resolve(host);
             BuildCommands();
 
             _binder = new KdeStateBinder(host, _kwin!, _desktops!, _activities!, _nightLight!);
@@ -125,12 +127,14 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin
             _commands.AddRange(VirtualDesktopCommands.Create(_kwin, _desktops));
             _commands.Add(ShowDesktopCommand.Create(_kwin));
             _commands.AddRange(KdeDisplayCommands.CreateDesktopDisplays(_desktops, () => ShowDesktopNames));
+            _commands.Add(KdeDisplayCommands.CreateDesktopFolder(_desktops, _grid!, () => ShowDesktopNames));
         }
 
         if (_capabilities.HasActivities && _activities is not null)
         {
             _commands.AddRange(ActivityCommands.Create(_activities));
             _commands.Add(KdeDisplayCommands.CreateActivityDisplay(_activities));
+            _commands.Add(KdeDisplayCommands.CreateActivityFolder(_activities, _grid!));
         }
 
         if (_plasmaVersion is not null)
