@@ -62,6 +62,12 @@ internal static class KdeMenuTree
 
         AddSection(nodes, "Switch by Number", fixedSlots);
 
+        List<MenuNode> manage = [];
+        Add(manage, available, "DesktopAdd", "Add Desktop");
+        Add(manage, available, "DesktopRemove", "Remove Current Desktop");
+        Add(manage, available, "DesktopRemoveLast", "Remove Last Desktop");
+        AddSection(nodes, "Manage Desktops", manage);
+
         // The live list binds the id-based command, so a renamed desktop keeps working.
         if (desktops is not null && desktops.HasState && available.Contains(KdeCommands.Prefix + "DesktopSelect"))
         {

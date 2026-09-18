@@ -195,6 +195,65 @@ internal sealed class VirtualDesktopClient(KdeSession session) : IDisposable
             (ref MessageWriter writer) => writer.WriteVariantString(desktopId));
     }
 
+    /// <summary>
+    /// Appends a new virtual desktop at the end of the layout. KWin answers this call, so the
+    /// reply is awaited; the cache updates itself from the desktopCreated signal afterwards.
+    /// </summary>
+    public Task<bool> CreateAsync(string name) => CreateAsync((uint)Count, name);
+
+    /// <summary>Creates a new virtual desktop at a zero-based position.</summary>
+    public Task<bool> CreateAsync(uint position, string name)
+    {
+        DBusClient? client = session.Client;
+        if (client is null)
+        {
+            return Task.FromResult(false);
+        }
+
+        return client.CallAsync(
+            KdeServices.KWin,
+            Path,
+            Interface,
+            "createDesktop",
+            "us",
+            (ref MessageWriter writer) =>
+            {
+                writer.WriteUInt32(position);
+                writer.WriteString(name);
+            });
+    }
+
+    /// <summary>
+    /// Removes the desktop with the given UUID. KWin refuses to remove the last remaining desktop,
+    /// so the caller checks <see cref="Count"/> first.
+    /// </summary>
+    public Task<bool> RemoveAsync(string desktopId)
+    {
+        DBusClient? client = session.Client;
+        if (client is null || string.IsNullOrEmpty(desktopId))
+        {
+            return Task.FromResult(false);
+        }
+
+        return client.CallAsync(
+            KdeServices.KWin,
+            Path,
+            Interface,
+            "removeDesktop",
+            "s",
+            (ref MessageWriter writer) => writer.WriteString(desktopId));
+    }
+
+    /// <summary>The desktop at the end of the layout, or null when the cache holds no state.</summary>
+    public VirtualDesktop? Last
+    {
+        get
+        {
+            IReadOnlyList<VirtualDesktop> desktops = Desktops;
+            return desktops.Count == 0 ? null : desktops[^1];
+        }
+    }
+
     /// <summary>Finds a desktop by its one-based number as shown to the user.</summary>
     public VirtualDesktop? FindByNumber(int number)
     {
