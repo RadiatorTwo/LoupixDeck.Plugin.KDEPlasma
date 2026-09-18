@@ -74,12 +74,16 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
 
     public override IEnumerable<IPluginCommand> GetCommands() => _commands;
 
+    /// <summary>mdi-monitor-dashboard - the card glyph of the KDE Plasma category.</summary>
+    private const string GroupGlyph = "\U000F0A07";
+
     public override IReadOnlyList<CommandGroupDescriptor> GetCommandGroups() =>
     [
         new CommandGroupDescriptor
         {
             Group = KdeCommands.Group,
-            Description = "Virtual desktops, windows, Activities, Overview, Night Color and session"
+            Description = "Virtual desktops, windows, Activities, Overview, Night Color and session",
+            Icon = GroupGlyph
         }
     ];
 

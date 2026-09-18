@@ -67,7 +67,42 @@ internal static class VirtualDesktopCommands
                     Parameters = [new CommandParameter("name", typeof(string))],
                     HiddenFromMenu = true
                 },
-                ctx => SwitchToNameAsync(ctx, desktops))
+                ctx => SwitchToNameAsync(ctx, desktops)),
+
+            new KdeActionCommand(
+                new CommandDescriptor
+                {
+                    CommandName = KdeCommands.Prefix + "DesktopAdd",
+                    DisplayName = "KDE: Add Desktop",
+                    Group = KdeCommands.Group,
+                    Description = "Adds a virtual desktop at the end; an empty name falls back to \"Desktop N\"",
+                    ParameterTemplate = "({name})",
+                    Parameters = [new CommandParameter("name", typeof(string))],
+                    HiddenFromMenu = true
+                },
+                ctx => AddAsync(ctx, desktops)),
+
+            new KdeActionCommand(
+                new CommandDescriptor
+                {
+                    CommandName = KdeCommands.Prefix + "DesktopRemove",
+                    DisplayName = "KDE: Remove Current Desktop",
+                    Group = KdeCommands.Group,
+                    Description = "Removes the desktop that is currently active",
+                    HiddenFromMenu = true
+                },
+                ctx => RemoveAsync(ctx, desktops, desktops.Current)),
+
+            new KdeActionCommand(
+                new CommandDescriptor
+                {
+                    CommandName = KdeCommands.Prefix + "DesktopRemoveLast",
+                    DisplayName = "KDE: Remove Last Desktop",
+                    Group = KdeCommands.Group,
+                    Description = "Removes the last desktop of the layout",
+                    HiddenFromMenu = true
+                },
+                ctx => RemoveAsync(ctx, desktops, desktops.Last))
         ];
 
         for (int number = 1; number <= FixedDesktopCommandCount; number++)
@@ -105,6 +140,37 @@ internal static class VirtualDesktopCommands
             // The cache may be stale right after a KWin restart; KWin's own numbering is the fallback.
             await kwin.SetCurrentDesktopAsync(number).ConfigureAwait(false);
         });
+    }
+
+    private static async Task AddAsync(CommandContext ctx, VirtualDesktopClient desktops)
+    {
+        string name = ctx.Parameters.Length > 0 ? ctx.Parameters[0].Trim() : string.Empty;
+        if (name.Length == 0)
+        {
+            // KWin accepts an empty name but then shows an unnamed desktop, so the usual
+            // "Desktop N" naming is filled in here.
+            name = $"Desktop {(desktops.Count + 1).ToString(CultureInfo.InvariantCulture)}";
+        }
+
+        await desktops.CreateAsync(name).ConfigureAwait(false);
+    }
+
+    private static async Task RemoveAsync(CommandContext ctx, VirtualDesktopClient desktops, VirtualDesktop? target)
+    {
+        if (target is null)
+        {
+            ctx.Host.Logger.Warn("KdePlasma: no desktop to remove; the KWin state is unknown.");
+            return;
+        }
+
+        // KWin refuses to remove the last remaining desktop, so the button stays a no-op there.
+        if (desktops.Count <= 1)
+        {
+            ctx.Host.Logger.Warn("KdePlasma: the last virtual desktop cannot be removed.");
+            return;
+        }
+
+        await desktops.RemoveAsync(target.Value.Id).ConfigureAwait(false);
     }
 
     private static async Task SwitchToIdAsync(CommandContext ctx, VirtualDesktopClient desktops)

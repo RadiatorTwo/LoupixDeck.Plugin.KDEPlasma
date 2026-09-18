@@ -25,6 +25,13 @@ roughly fifty entries.
 | `KdePlasma.DesktopSelect(desktopId)` | Switch to a desktop by its stable UUID (used by the folder and the menu) |
 | `KdePlasma.DesktopSelectByName(name)` | Switch to a desktop by its name |
 | `KdePlasma.DesktopFolder` | Shows the current desktop and opens a folder with all desktops |
+| `KdePlasma.DesktopAdd(name)` | Adds a desktop at the end; an empty name falls back to `Desktop N` |
+| `KdePlasma.DesktopRemove` | Removes the desktop that is currently active |
+| `KdePlasma.DesktopRemoveLast` | Removes the last desktop of the layout |
+
+Adding and removing go through `createDesktop` / `removeDesktop` on
+`org.kde.KWin.VirtualDesktopManager`. KWin refuses to remove the last remaining desktop, so that
+button stays a no-op instead of failing.
 
 ### Active window
 
