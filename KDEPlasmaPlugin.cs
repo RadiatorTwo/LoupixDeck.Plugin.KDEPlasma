@@ -15,6 +15,8 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
     private ActivityManagerClient? _activities;
     private NightLightClient? _nightLight;
     private KGlobalAccelClient? _accel;
+    private KWinBridgeInstaller? _bridgeInstaller;
+    private KWinBridgeClient? _bridge;
     private ScreenSaverClient? _screenSaver;
     private KRunnerClient? _krunner;
     private PlasmaVersionClient? _plasmaVersion;
@@ -143,12 +145,15 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
 
         _binder?.Dispose();
         _binder = null;
+        _bridge?.Dispose();
         _desktops?.Dispose();
         _activities?.Dispose();
         _nightLight?.Dispose();
         _kwin?.Dispose();
         _session?.Dispose();
 
+        _bridge = null;
+        _bridgeInstaller = null;
         _desktops = null;
         _activities = null;
         _nightLight = null;
@@ -166,6 +171,8 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
     private void CreateClients(KdeSession session)
     {
         _accel = new KGlobalAccelClient(session);
+        _bridgeInstaller = new KWinBridgeInstaller(_host!.Logger);
+        _bridge = new KWinBridgeClient(session, _host!.Logger, _accel, _bridgeInstaller);
         _kwin = new KWinClient(session);
         _desktops = new VirtualDesktopClient(session);
         _activities = new ActivityManagerClient(session);
@@ -235,6 +242,12 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
         }
 
         await _plasmaVersion!.SeedAsync().ConfigureAwait(false);
+
+        if (_bridge is not null)
+        {
+            await _bridge.StartAsync().ConfigureAwait(false);
+        }
+
         _binder?.ReplayAll();
     }
 
@@ -257,6 +270,13 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
         }
 
         await _plasmaVersion!.SeedAsync().ConfigureAwait(false);
+
+        if (_bridge is not null)
+        {
+            // KWin drops every loaded script when it restarts, so the bridge has to be put back.
+            await _bridge.SeedAsync().ConfigureAwait(false);
+        }
+
         _binder?.ReplayAll();
     }
 
