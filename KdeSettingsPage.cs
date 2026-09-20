@@ -7,6 +7,9 @@ namespace LoupixDeck.Plugin.KDEPlasma;
 /// <summary>Builds the declarative settings page and its capability test.</summary>
 internal static class KdeSettingsPage
 {
+    /// <summary>The accepted values of the Overview effect setting, for its description.</summary>
+    private static readonly string OverviewEffectValues = string.Join(", ", OverviewEffects.All);
+
     public static IReadOnlyList<PluginSettingDescriptor> BuildSchema() =>
     [
         new PluginSettingDescriptor
@@ -22,6 +25,14 @@ internal static class KdeSettingsPage
             Kind = PluginSettingKind.Toggle,
             Description = "Applies to the desktop buttons and the virtual desktops folder",
             DefaultValue = KdeSettingsStore.DefaultDesktopNames
+        },
+        new PluginSettingDescriptor
+        {
+            Key = KdeSettingsStore.OverviewEffectKey,
+            Label = "Overview effect",
+            Kind = PluginSettingKind.Text,
+            Description = "What the Overview button opens: " + OverviewEffectValues,
+            DefaultValue = KdeSettingsStore.DefaultOverviewEffect
         },
         new PluginSettingDescriptor
         {

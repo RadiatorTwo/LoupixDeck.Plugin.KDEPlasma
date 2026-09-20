@@ -126,6 +126,9 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
         host.RequestButtonRefresh(KdeDisplayCommands.DesktopFolderName);
     }
 
+    /// <summary>Which Overview effect the Overview button opens.</summary>
+    private string OverviewEffect => _settings?.OverviewEffect ?? KdeSettingsStore.DefaultOverviewEffect;
+
     /// <summary>Whether desktop buttons show names instead of numbers.</summary>
     private bool ShowDesktopNames => _settings?.ShowDesktopNames ?? KdeSettingsStore.DefaultDesktopNames;
 
@@ -190,7 +193,7 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
         if (_capabilities.HasKGlobalAccel && _accel is not null)
         {
             _commands.AddRange(WindowCommands.Create(_accel, _capabilities));
-            _commands.AddRange(OverviewCommands.Create(_accel, _capabilities));
+            _commands.AddRange(OverviewCommands.Create(_accel, _capabilities, () => OverviewEffect));
         }
 
         if (_capabilities.HasKWin && _kwin is not null && _desktops is not null)

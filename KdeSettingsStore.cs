@@ -12,9 +12,13 @@ internal sealed class KdeSettingsStore(IPluginSettings settings)
     public const string TimeoutKey = "behavior:dbusTimeoutMs";
     public const string BridgeInstalledKey = "bridge:installed";
     public const string BridgeVersionKey = "bridge:version";
+    public const string OverviewEffectKey = "display:overviewEffect";
 
     // Reserved for later rounds so their keys cannot collide:
-    // "display:hiddenActivities", "display:overviewEffect", "display:monitorOrder".
+    // "display:hiddenActivities", "display:monitorOrder".
+
+    /// <summary>The Overview effect a fresh installation uses, and the fallback for a bad value.</summary>
+    public const string DefaultOverviewEffect = OverviewEffects.Overview;
 
     public const bool DefaultDesktopNames = true;
     public const int DefaultTimeoutMilliseconds = 2000;
@@ -32,6 +36,19 @@ internal sealed class KdeSettingsStore(IPluginSettings settings)
         {
             long stored = settings.Get(TimeoutKey, (long)DefaultTimeoutMilliseconds);
             return (int)Math.Clamp(stored, MinimumTimeoutMilliseconds, MaximumTimeoutMilliseconds);
+        }
+    }
+
+    /// <summary>
+    /// Which Overview effect <c>KdePlasma.Overview</c> opens. An absent or unknown value reads as
+    /// the plain Overview, so a settings file from an older version behaves exactly as before.
+    /// </summary>
+    public string OverviewEffect
+    {
+        get
+        {
+            string stored = settings.Get(OverviewEffectKey, DefaultOverviewEffect) ?? DefaultOverviewEffect;
+            return OverviewEffects.Normalize(stored);
         }
     }
 
