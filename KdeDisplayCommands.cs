@@ -41,7 +41,7 @@ internal static class KdeDisplayCommands
                     HiddenFromMenu = true
                 },
                 DesktopInterval,
-                () => DescribeCurrentDesktop(desktops, showDesktopNames())),
+                _ => DescribeCurrentDesktop(desktops, showDesktopNames())),
 
             new KdeTextDisplayCommand(
                 new CommandDescriptor
@@ -53,7 +53,7 @@ internal static class KdeDisplayCommands
                     HiddenFromMenu = true
                 },
                 DesktopInterval,
-                () => desktops.Current?.Name ?? KdeTextDisplayCommand.UnknownText),
+                _ => desktops.Current?.Name ?? KdeTextDisplayCommand.UnknownText),
 
             new KdeTextDisplayCommand(
                 new CommandDescriptor
@@ -65,7 +65,7 @@ internal static class KdeDisplayCommands
                     HiddenFromMenu = true
                 },
                 SlowInterval,
-                () => desktops.HasState
+                _ => desktops.HasState
                     ? desktops.Count.ToString(CultureInfo.InvariantCulture)
                     : KdeTextDisplayCommand.UnknownText)
         ];
@@ -89,7 +89,7 @@ internal static class KdeDisplayCommands
                     HiddenFromMenu = true
                 },
                 WindowInterval,
-                () => DescribeWindow(bridge, static window => window.Title)),
+                ctx => DescribeWindow(ctx, bridge, static window => window.Title)),
 
             new KdeTextDisplayCommand(
                 new CommandDescriptor
@@ -101,7 +101,7 @@ internal static class KdeDisplayCommands
                     HiddenFromMenu = true
                 },
                 WindowInterval,
-                () => DescribeWindow(bridge, static window => window.DisplayAppId)),
+                ctx => DescribeWindow(ctx, bridge, static window => window.DisplayAppId)),
 
             new KdeTextDisplayCommand(
                 new CommandDescriptor
@@ -113,12 +113,12 @@ internal static class KdeDisplayCommands
                     HiddenFromMenu = true
                 },
                 WindowInterval,
-                () => DescribeWindow(bridge, DescribeWindowState))
+                ctx => DescribeWindow(ctx, bridge, window => DescribeWindowState(ctx, window)))
         ];
     }
 
     /// <summary>Reads one value of the active window, or the unknown text while there is none.</summary>
-    private static string DescribeWindow(KWinBridgeClient bridge, Func<ActiveWindowInfo, string> read)
+    private static string DescribeWindow(CommandContext ctx, KWinBridgeClient bridge, Func<ActiveWindowInfo, string> read)
     {
         ActiveWindowInfo window = bridge.ActiveWindow;
         if (!bridge.Connected || !window.Present)
@@ -130,31 +130,31 @@ internal static class KdeDisplayCommands
         return text.Length > 0 ? text : KdeTextDisplayCommand.UnknownText;
     }
 
-    private static string DescribeWindowState(ActiveWindowInfo window)
+    private static string DescribeWindowState(CommandContext ctx, ActiveWindowInfo window)
     {
         List<string> parts = [];
 
         if (window.Maximized)
         {
-            parts.Add("Maximized");
+            parts.Add(ctx.Host.Tr("Maximized"));
         }
 
         if (window.KeepAbove)
         {
-            parts.Add("Above");
+            parts.Add(ctx.Host.Tr("Above"));
         }
 
         if (window.FullScreen)
         {
-            parts.Add("Fullscreen");
+            parts.Add(ctx.Host.Tr("Fullscreen"));
         }
 
         if (window.Minimized)
         {
-            parts.Add("Minimized");
+            parts.Add(ctx.Host.Tr("Minimized"));
         }
 
-        return parts.Count > 0 ? string.Join(", ", parts) : "Normal";
+        return parts.Count > 0 ? string.Join(", ", parts) : ctx.Host.Tr("Normal");
     }
 
     public static IPluginCommand CreateActivityDisplay(ActivityManagerClient activities)
@@ -169,7 +169,7 @@ internal static class KdeDisplayCommands
                 HiddenFromMenu = true
             },
             SlowInterval,
-            () => activities.Current?.Name ?? KdeTextDisplayCommand.UnknownText);
+            _ => activities.Current?.Name ?? KdeTextDisplayCommand.UnknownText);
     }
 
     public static IPluginCommand CreateVersionDisplay(PlasmaVersionClient version)
@@ -184,7 +184,7 @@ internal static class KdeDisplayCommands
                 HiddenFromMenu = true
             },
             VersionInterval,
-            () => version.Version.Length > 0 ? version.Version : KdeTextDisplayCommand.UnknownText);
+            _ => version.Version.Length > 0 ? version.Version : KdeTextDisplayCommand.UnknownText);
     }
 
     /// <summary>The button that shows the current desktop and opens the virtual desktop folder.</summary>
@@ -202,10 +202,10 @@ internal static class KdeDisplayCommands
                 Description = "Opens a folder with all virtual desktops"
             },
             DesktopInterval,
-            () => DescribeCurrentDesktop(desktops, showDesktopNames()),
+            _ => DescribeCurrentDesktop(desktops, showDesktopNames()),
             ctx =>
             {
-                ctx.Host.OpenFolder(new VirtualDesktopFolderProvider(desktops, grid, showDesktopNames));
+                ctx.Host.OpenFolder(new VirtualDesktopFolderProvider(desktops, grid, showDesktopNames, ctx.Host.Tr));
                 return Task.CompletedTask;
             });
     }
@@ -225,10 +225,10 @@ internal static class KdeDisplayCommands
                 Description = "Opens a folder with all Activities"
             },
             SlowInterval,
-            () => activities.Current?.Name ?? KdeTextDisplayCommand.UnknownText,
+            _ => activities.Current?.Name ?? KdeTextDisplayCommand.UnknownText,
             ctx =>
             {
-                ctx.Host.OpenFolder(new ActivityFolderProvider(activities, grid, isHidden));
+                ctx.Host.OpenFolder(new ActivityFolderProvider(activities, grid, isHidden, ctx.Host.Tr));
                 return Task.CompletedTask;
             });
     }

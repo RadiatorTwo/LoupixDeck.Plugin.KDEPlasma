@@ -57,12 +57,12 @@ internal static class NightColorCommands
             HiddenFromMenu = true
         };
 
-        commands.Add(new KdeTextDisplayCommand(status, StatusUpdateInterval, () => BuildStatusText(nightLight)));
+        commands.Add(new KdeTextDisplayCommand(status, StatusUpdateInterval, ctx => BuildStatusText(ctx, nightLight)));
 
         return commands;
     }
 
-    private static string BuildStatusText(NightLightClient nightLight)
+    private static string BuildStatusText(CommandContext ctx, NightLightClient nightLight)
     {
         if (!nightLight.HasState)
         {
@@ -71,12 +71,12 @@ internal static class NightColorCommands
 
         if (!nightLight.Enabled)
         {
-            return "Off";
+            return ctx.Host.Tr("Off");
         }
 
         if (!nightLight.Running || nightLight.Temperature == 0)
         {
-            return "On";
+            return ctx.Host.Tr("On");
         }
 
         return $"{nightLight.Temperature.ToString(CultureInfo.InvariantCulture)}K";

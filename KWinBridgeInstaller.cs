@@ -31,13 +31,24 @@ internal sealed record BridgeInstallState(
     /// <summary>Whether the bridge commands may be offered at all.</summary>
     public bool IsUsable => State == BridgeState.Installed;
 
-    public string Describe() => State switch
+    /// <summary>
+    /// One line for the settings page. The text is built while running, so it is looked up through
+    /// <paramref name="translate"/> instead of being translated by the host from a descriptor.
+    /// </summary>
+    public string Describe(Func<string, string> translate) => State switch
     {
-        BridgeState.Installed => $"Installed {InstalledVersion} (protocol {InstalledProtocol})",
-        BridgeState.Outdated => $"Outdated {InstalledVersion} (protocol {InstalledProtocol}), " +
-                                $"this plugin ships {ShippedVersion} (protocol {ShippedProtocol})",
-        BridgeState.Foreign => "A foreign script occupies the bridge directory",
-        _ => "Not installed"
+        BridgeState.Installed => string.Format(
+            translate("Installed {0} (protocol {1})"),
+            InstalledVersion,
+            InstalledProtocol),
+        BridgeState.Outdated => string.Format(
+            translate("Outdated {0} (protocol {1}), this plugin ships {2} (protocol {3})"),
+            InstalledVersion,
+            InstalledProtocol,
+            ShippedVersion,
+            ShippedProtocol),
+        BridgeState.Foreign => translate("A foreign script occupies the bridge directory"),
+        _ => translate("Not installed")
     };
 }
 

@@ -1,7 +1,6 @@
 {
   "KDE Plasma desktop control: virtual desktops, window actions, Activities, Overview, Night Color and session commands.": "Control del escritorio KDE Plasma: escritorios virtuales, acciones de ventana, Actividades, Vista general, Color nocturno y comandos de sesión.",
   "Virtual desktops, windows, Activities, Overview, Night Color and session": "Escritorios virtuales, ventanas, Actividades, Vista general, Color nocturno y sesión",
-
   "KDE: Next Desktop": "KDE: Escritorio siguiente",
   "KDE: Previous Desktop": "KDE: Escritorio anterior",
   "KDE: Switch to Desktop": "KDE: Cambiar al escritorio",
@@ -24,7 +23,6 @@
   "Adds a virtual desktop at the end; an empty name falls back to \"Desktop N\"": "Añade un escritorio virtual al final; sin nombre se usa \"Desktop N\"",
   "Removes the desktop that is currently active": "Elimina el escritorio activo en este momento",
   "Removes the last desktop of the layout": "Elimina el último escritorio de la disposición",
-
   "KDE: Minimize Window": "KDE: Minimizar la ventana",
   "KDE: Maximize / Restore Window": "KDE: Maximizar / restaurar la ventana",
   "KDE: Close Window": "KDE: Cerrar la ventana",
@@ -42,7 +40,6 @@
   "Move the active window to the screen with the given index": "Mueve la ventana activa a la pantalla con el índice indicado",
   "Move the active window to the virtual desktop with the given id": "Mueve la ventana activa al escritorio virtual con el id indicado",
   "Move the active window to the monitor with the given name": "Mueve la ventana activa al monitor con el nombre indicado",
-
   "KDE: Show Desktop": "KDE: Mostrar el escritorio",
   "Show the desktop and hide all windows": "Muestra el escritorio y oculta todas las ventanas",
   "KDE: Overview": "KDE: Vista general",
@@ -55,7 +52,6 @@
   "KDE: Toggle Night Color": "KDE: Alternar el color nocturno",
   "KDE: Night Color Status": "KDE: Estado del color nocturno",
   "Shows whether Night Color is active and at which temperature": "Muestra si el color nocturno está activo y con qué temperatura",
-
   "KDE: Next Activity": "KDE: Actividad siguiente",
   "KDE: Previous Activity": "KDE: Actividad anterior",
   "KDE: Switch to Activity": "KDE: Cambiar a la actividad",
@@ -66,7 +62,6 @@
   "KDE: Open KRunner": "KDE: Abrir KRunner",
   "KDE: KRunner Query": "KDE: Búsqueda de KRunner",
   "Open KRunner pre-filled with the given query": "Abre KRunner con la búsqueda indicada ya escrita",
-
   "KDE: Current Desktop": "KDE: Escritorio actual",
   "KDE: Desktop Name": "KDE: Nombre del escritorio",
   "KDE: Desktop Count": "KDE: Número de escritorios",
@@ -83,12 +78,10 @@
   "Shows the title of the active window": "Muestra el título de la ventana activa",
   "Shows the application id of the active window": "Muestra el id de aplicación de la ventana activa",
   "Shows whether the active window is maximized, kept above or fullscreen": "Muestra si la ventana activa está maximizada, encima o en pantalla completa",
-
   "KDE: Virtual Desktops": "KDE: Escritorios virtuales",
   "KDE: Activities": "KDE: Actividades",
   "Opens a folder with all virtual desktops": "Abre una carpeta con todos los escritorios virtuales",
   "Opens a folder with all Activities": "Abre una carpeta con todas las actividades",
-
   "Virtual Desktops": "Escritorios virtuales",
   "Switch by Number": "Cambiar por número",
   "Switch by Name": "Cambiar por nombre",
@@ -139,7 +132,6 @@
   "Active Window Title": "Título de la ventana activa",
   "Active Window Application": "Aplicación de la ventana activa",
   "Active Window State": "Estado de la ventana activa",
-
   "Display": "Visualización",
   "Behaviour": "Comportamiento",
   "KWin bridge": "Puente de KWin",
@@ -157,5 +149,41 @@
   "Test detected capabilities": "Probar las capacidades detectadas",
   "Bridge status": "Estado del puente",
   "Install or update bridge": "Instalar o actualizar el puente",
-  "Remove bridge": "Eliminar el puente"
+  "Remove bridge": "Eliminar el puente",
+  "Maximized": "Maximizada",
+  "Above": "Encima",
+  "Fullscreen": "Pantalla completa",
+  "Minimized": "Minimizada",
+  "Normal": "Normal",
+  "On": "Activado",
+  "Off": "Desactivado",
+  "on": "activado",
+  "off": "desactivado",
+  "yes": "sí",
+  "no": "no",
+  "none": "ninguno",
+  "unknown": "desconocida",
+  "unavailable": "no disponible",
+  "connected": "conectado",
+  "not connected": "no conectado",
+  "Plasma {0}": "Plasma {0}",
+  "KWin: {0}": "KWin: {0}",
+  "{0} desktops": "{0} escritorios",
+  "{0} desktops, current \"{1}\"": "{0} escritorios, actual \"{1}\"",
+  "{0} Activities": "{0} actividades",
+  "Night Color: {0}": "Color nocturno: {0}",
+  "Effects: {0}": "Efectos: {0}",
+  "{0} KWin shortcuts": "{0} accesos rápidos de KWin",
+  "{0} monitors": "{0} monitores",
+  "Not a KDE session, or org.kde.KWin is not on the session bus.": "No es una sesión de KDE, u org.kde.KWin no está en el bus de sesión.",
+  "Capability test failed: {0}": "La prueba de capacidades ha fallado: {0}",
+  "The plugin is not active on this session.": "El complemento no está activo en esta sesión.",
+  "Installed {0} (protocol {1})": "Instalado {0} (protocolo {1})",
+  "Outdated {0} (protocol {1}), this plugin ships {2} (protocol {3})": "Obsoleto {0} (protocolo {1}), este complemento incluye {2} (protocolo {3})",
+  "A foreign script occupies the bridge directory": "Un script ajeno ocupa el directorio del puente",
+  "Not installed": "No instalado",
+  "The bridge could not be written, see the log.": "No se ha podido escribir el puente, consulte el registro.",
+  "The bridge could not be removed, see the log.": "No se ha podido eliminar el puente, consulte el registro.",
+  "{0}. Restart LoupixDeck to get the bridge commands.": "{0}. Reinicie LoupixDeck para que aparezcan los comandos del puente.",
+  "The bridge was removed. Restart LoupixDeck to drop its commands.": "El puente se ha eliminado. Reinicie LoupixDeck para que desaparezcan sus comandos."
 }

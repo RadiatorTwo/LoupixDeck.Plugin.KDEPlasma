@@ -14,15 +14,23 @@ public sealed class ActivityFolderProvider : FolderProviderBase
     private readonly ActivityManagerClient _activities;
     private readonly KdeFolderGrid _grid;
     private readonly Func<KdeActivity, bool> _isHidden;
+    private readonly Func<string, string> _translate;
 
-    internal ActivityFolderProvider(ActivityManagerClient activities, KdeFolderGrid grid, Func<KdeActivity, bool> isHidden)
+    internal ActivityFolderProvider(
+        ActivityManagerClient activities,
+        KdeFolderGrid grid,
+        Func<KdeActivity, bool> isHidden,
+        Func<string, string> translate)
     {
         _activities = activities;
         _grid = grid;
         _isHidden = isHidden;
+        _translate = translate;
     }
 
-    public override string Title => "Activities";
+    // The host translates what a plugin declares; a folder title is built at runtime, so the
+    // plugin looks it up itself against the same files.
+    public override string Title => _translate("Activities");
 
     public override void OnEnter() => _activities.Changed += RaiseEntriesChanged;
 
