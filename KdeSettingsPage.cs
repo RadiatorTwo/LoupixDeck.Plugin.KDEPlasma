@@ -42,18 +42,19 @@ internal static class KdeSettingsPage
     /// <summary>Re-runs the capability detection and reports what this session offers.</summary>
     public static async Task<string> TestCapabilitiesAsync(
         KdeSession? session,
+        KWinBridgeInstaller? bridgeInstaller,
         VirtualDesktopClient? desktops,
         ActivityManagerClient? activities,
         NightLightClient? nightLight)
     {
         try
         {
-            if (session is null || !session.IsSupported)
+            if (session is null || bridgeInstaller is null || !session.IsSupported)
             {
                 return "Not a KDE session, or org.kde.KWin is not on the session bus.";
             }
 
-            KdeCapabilities capabilities = await new KdeCapabilityDetector(session).DetectAsync().ConfigureAwait(false);
+            KdeCapabilities capabilities = await new KdeCapabilityDetector(session, bridgeInstaller).DetectAsync().ConfigureAwait(false);
 
             StringBuilder status = new();
             status.Append("Plasma ");

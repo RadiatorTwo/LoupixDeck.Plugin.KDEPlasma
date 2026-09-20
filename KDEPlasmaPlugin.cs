@@ -50,7 +50,8 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
                 return;
             }
 
-            _capabilities = new KdeCapabilityDetector(session).DetectAsync().WaitAsync(StartupTimeout).GetAwaiter().GetResult();
+            _bridgeInstaller = new KWinBridgeInstaller(host.Logger);
+            _capabilities = new KdeCapabilityDetector(session, _bridgeInstaller).DetectAsync().WaitAsync(StartupTimeout).GetAwaiter().GetResult();
             host.Logger.Info(
                 $"KDE Plasma: Plasma {(_capabilities.PlasmaVersion.Length > 0 ? _capabilities.PlasmaVersion : "unknown")}, " +
                 $"{_capabilities.KWinShortcuts.Count} KWin shortcuts, effects: {string.Join(", ", _capabilities.SupportedEffects)}.");
@@ -105,7 +106,7 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
         new PluginSettingAction
         {
             Label = "Test detected capabilities",
-            Invoke = () => KdeSettingsPage.TestCapabilitiesAsync(_session, _desktops, _activities, _nightLight)
+            Invoke = () => KdeSettingsPage.TestCapabilitiesAsync(_session, _bridgeInstaller, _desktops, _activities, _nightLight)
         }
     ];
 
@@ -171,8 +172,7 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
     private void CreateClients(KdeSession session)
     {
         _accel = new KGlobalAccelClient(session);
-        _bridgeInstaller = new KWinBridgeInstaller(_host!.Logger);
-        _bridge = new KWinBridgeClient(session, _host!.Logger, _accel, _bridgeInstaller);
+        _bridge = new KWinBridgeClient(session, _host!.Logger, _accel, _bridgeInstaller!);
         _kwin = new KWinClient(session);
         _desktops = new VirtualDesktopClient(session);
         _activities = new ActivityManagerClient(session);

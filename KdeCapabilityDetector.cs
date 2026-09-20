@@ -3,7 +3,7 @@ using Tmds.DBus.Protocol;
 namespace LoupixDeck.Plugin.KDEPlasma;
 
 /// <summary>Probes the running KDE session and builds a <see cref="KdeCapabilities"/> snapshot.</summary>
-internal sealed class KdeCapabilityDetector(KdeSession session)
+internal sealed class KdeCapabilityDetector(KdeSession session, KWinBridgeInstaller bridgeInstaller)
 {
     /// <summary>Effects the plugin exposes commands for.</summary>
     public static readonly string[] ProbedEffects = ["overview", "windowview"];
@@ -45,9 +45,15 @@ internal sealed class KdeCapabilityDetector(KdeSession session)
             ? await ReadPlasmaVersionAsync(client).ConfigureAwait(false)
             : string.Empty;
 
+        // Reading the installed script is plain file I/O, so the command set can be gated on it
+        // while the commands are built, long before the script answers over the bus.
+        BridgeInstallState bridge = bridgeInstaller.Inspect();
+
         return new KdeCapabilities
         {
             HasKWin = hasKWin,
+            Bridge = bridge,
+            HasWindowBridge = hasKWin && bridge.IsUsable,
             HasKGlobalAccel = hasKGlobalAccel,
             HasActivities = session.HasService(KdeServices.ActivityManager),
             HasKRunner = session.HasService(KdeServices.KRunner),
