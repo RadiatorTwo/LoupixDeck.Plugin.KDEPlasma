@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Packages the plugin the same way release.ps1 does: publish, then gather the DLLs,
-# the deps file and plugin.json into dist/<pluginId>/.
+# the deps file, the translation files and plugin.json into dist/<pluginId>/.
 set -euo pipefail
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
@@ -47,5 +47,13 @@ fi
 cp -- "${dlls[@]}" "$output_path/"
 cp -- "$publish_output/$assembly_name.deps.json" "$output_path/"
 cp -- "$script_dir/plugin.json" "$output_path/"
+
+# The translation files are optional; a plugin without them just stays English.
+shopt -s nullglob
+strings=("$script_dir"/strings.*.json)
+shopt -u nullglob
+if [[ ${#strings[@]} -gt 0 ]]; then
+    cp -- "${strings[@]}" "$output_path/"
+fi
 
 echo "Release v$version ready at: $output_path"

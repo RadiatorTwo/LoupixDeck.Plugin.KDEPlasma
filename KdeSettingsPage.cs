@@ -7,6 +7,12 @@ namespace LoupixDeck.Plugin.KDEPlasma;
 /// <summary>Builds the declarative settings page and its capability test.</summary>
 internal static class KdeSettingsPage
 {
+    /// <summary>Text for a state the plugin cannot report on, because it never started.</summary>
+    private const string NotActiveText = "The plugin is not active on this session.";
+
+    /// <summary>Separates the parts of a status line.</summary>
+    private const string Separator = " · ";
+
     /// <summary>The accepted values of the Overview effect setting, for its description.</summary>
     private static readonly string OverviewEffectValues = string.Join(", ", OverviewEffects.All);
 
@@ -78,6 +84,7 @@ internal static class KdeSettingsPage
 
     /// <summary>The buttons that manage the KWin bridge script.</summary>
     public static IReadOnlyList<PluginSettingAction> BuildBridgeActions(
+        IPluginHost? host,
         KWinBridgeInstaller? installer,
         KWinBridgeClient? bridge,
         KdeSettingsStore? settings)
@@ -87,60 +94,67 @@ internal static class KdeSettingsPage
             new PluginSettingAction
             {
                 Label = "Bridge status",
-                Invoke = () => Task.FromResult(DescribeBridge(installer, bridge))
+                Invoke = () => Task.FromResult(DescribeBridge(host, installer, bridge))
             },
             new PluginSettingAction
             {
                 Label = "Install or update bridge",
-                Invoke = () => InstallBridgeAsync(installer, bridge, settings)
+                Invoke = () => InstallBridgeAsync(host, installer, bridge, settings)
             },
             new PluginSettingAction
             {
                 Label = "Remove bridge",
-                Invoke = () => RemoveBridgeAsync(installer, bridge, settings)
+                Invoke = () => RemoveBridgeAsync(host, installer, bridge, settings)
             }
         ];
     }
 
-    private static string DescribeBridge(KWinBridgeInstaller? installer, KWinBridgeClient? bridge)
+    /// <summary>
+    /// Looks text up in the plugin's own translation files. An action result is built while
+    /// running, so unlike a descriptor it is never translated by the host on its own.
+    /// </summary>
+    private static string Tr(IPluginHost? host, string english) => host?.Tr(english) ?? english;
+
+    private static string DescribeBridge(IPluginHost? host, KWinBridgeInstaller? installer, KWinBridgeClient? bridge)
     {
         if (installer is null)
         {
-            return "The plugin is not active on this session.";
+            return Tr(host, NotActiveText);
         }
 
         StringBuilder status = new();
-        status.Append(installer.Inspect().Describe());
+        status.Append(installer.Inspect().Describe(english => Tr(host, english)));
 
         if (bridge is not null)
         {
-            status.Append(bridge.Connected ? " · connected" : " · not connected");
+            status.Append(Separator).Append(Tr(host, bridge.Connected ? "connected" : "not connected"));
 
             if (bridge.Connected)
             {
-                status.Append(" · ")
-                    .Append(bridge.Outputs.Count.ToString(CultureInfo.InvariantCulture))
-                    .Append(" monitors");
+                status.Append(Separator).Append(string.Format(
+                    Tr(host, "{0} monitors"),
+                    bridge.Outputs.Count.ToString(CultureInfo.InvariantCulture)));
             }
         }
 
-        status.Append(" · ").Append(KWinBridgeInstaller.ScriptPath);
+        status.Append(Separator).Append(KWinBridgeInstaller.ScriptPath);
         return status.ToString();
     }
 
     private static async Task<string> InstallBridgeAsync(
+        IPluginHost? host,
         KWinBridgeInstaller? installer,
         KWinBridgeClient? bridge,
         KdeSettingsStore? settings)
     {
         if (installer is null)
         {
-            return "The plugin is not active on this session.";
+            return Tr(host, NotActiveText);
         }
 
         if (!await installer.InstallAsync().ConfigureAwait(false))
         {
-            return "The bridge could not be written, see the log.";
+            return Tr(host, "The bridge could not be written, see the log.");
         }
 
         BridgeInstallState state = installer.Inspect();
@@ -151,17 +165,20 @@ internal static class KdeSettingsPage
             await bridge.SeedAsync().ConfigureAwait(false);
         }
 
-        return $"{state.Describe()}. Restart LoupixDeck to get the bridge commands.";
+        return string.Format(
+            Tr(host, "{0}. Restart LoupixDeck to get the bridge commands."),
+            state.Describe(english => Tr(host, english)));
     }
 
     private static async Task<string> RemoveBridgeAsync(
+        IPluginHost? host,
         KWinBridgeInstaller? installer,
         KWinBridgeClient? bridge,
         KdeSettingsStore? settings)
     {
         if (installer is null)
         {
-            return "The plugin is not active on this session.";
+            return Tr(host, NotActiveText);
         }
 
         if (bridge is not null)
@@ -171,15 +188,16 @@ internal static class KdeSettingsPage
 
         if (!installer.Remove())
         {
-            return "The bridge could not be removed, see the log.";
+            return Tr(host, "The bridge could not be removed, see the log.");
         }
 
         settings?.SetBridgeInstalled(false, string.Empty);
-        return "The bridge was removed. Restart LoupixDeck to drop its commands.";
+        return Tr(host, "The bridge was removed. Restart LoupixDeck to drop its commands.");
     }
 
     /// <summary>Re-runs the capability detection and reports what this session offers.</summary>
     public static async Task<string> TestCapabilitiesAsync(
+        IPluginHost? host,
         KdeSession? session,
         KWinBridgeInstaller? bridgeInstaller,
         VirtualDesktopClient? desktops,
@@ -190,56 +208,57 @@ internal static class KdeSettingsPage
         {
             if (session is null || bridgeInstaller is null || !session.IsSupported)
             {
-                return "Not a KDE session, or org.kde.KWin is not on the session bus.";
+                return Tr(host, "Not a KDE session, or org.kde.KWin is not on the session bus.");
             }
 
             KdeCapabilities capabilities = await new KdeCapabilityDetector(session, bridgeInstaller).DetectAsync().ConfigureAwait(false);
 
             StringBuilder status = new();
-            status.Append("Plasma ");
-            status.Append(capabilities.PlasmaVersion.Length > 0 ? capabilities.PlasmaVersion : "unknown");
-            status.Append(" · KWin ").Append(capabilities.HasKWin ? "yes" : "no");
+            status.Append(string.Format(
+                Tr(host, "Plasma {0}"),
+                capabilities.PlasmaVersion.Length > 0 ? capabilities.PlasmaVersion : Tr(host, "unknown")));
+            status.Append(Separator).Append(string.Format(
+                Tr(host, "KWin: {0}"),
+                Tr(host, capabilities.HasKWin ? "yes" : "no")));
 
             if (desktops is not null && desktops.HasState)
             {
-                status.Append(" · ").Append(desktops.Count.ToString(CultureInfo.InvariantCulture)).Append(" desktops");
-
+                string count = desktops.Count.ToString(CultureInfo.InvariantCulture);
                 VirtualDesktop? current = desktops.Current;
-                if (current is not null)
-                {
-                    status.Append(" (current \"").Append(current.Value.Name).Append("\")");
-                }
+
+                status.Append(Separator).Append(current is null
+                    ? string.Format(Tr(host, "{0} desktops"), count)
+                    : string.Format(Tr(host, "{0} desktops, current \"{1}\""), count, current.Value.Name));
             }
 
             if (activities is not null && activities.HasState)
             {
-                status.Append(" · ").Append(activities.Activities.Count.ToString(CultureInfo.InvariantCulture))
-                    .Append(" activities");
+                status.Append(Separator).Append(string.Format(
+                    Tr(host, "{0} Activities"),
+                    activities.Activities.Count.ToString(CultureInfo.InvariantCulture)));
             }
 
-            status.Append(" · Night Color ");
-            if (!capabilities.NightLightAvailable)
-            {
-                status.Append("unavailable");
-            }
-            else
-            {
-                status.Append("available (").Append(nightLight?.Enabled == true ? "on" : "off").Append(')');
-            }
+            status.Append(Separator).Append(string.Format(
+                Tr(host, "Night Color: {0}"),
+                capabilities.NightLightAvailable
+                    ? Tr(host, nightLight?.Enabled == true ? "on" : "off")
+                    : Tr(host, "unavailable")));
 
-            status.Append(" · effects: ");
-            status.Append(capabilities.SupportedEffects.Count > 0
-                ? string.Join(", ", capabilities.SupportedEffects)
-                : "none");
+            status.Append(Separator).Append(string.Format(
+                Tr(host, "Effects: {0}"),
+                capabilities.SupportedEffects.Count > 0
+                    ? string.Join(", ", capabilities.SupportedEffects)
+                    : Tr(host, "none")));
 
-            status.Append(" · ").Append(capabilities.KWinShortcuts.Count.ToString(CultureInfo.InvariantCulture))
-                .Append(" KWin shortcuts");
+            status.Append(Separator).Append(string.Format(
+                Tr(host, "{0} KWin shortcuts"),
+                capabilities.KWinShortcuts.Count.ToString(CultureInfo.InvariantCulture)));
 
             return status.ToString();
         }
         catch (Exception ex)
         {
-            return $"Capability test failed: {ex.Message}";
+            return string.Format(Tr(host, "Capability test failed: {0}"), ex.Message);
         }
     }
 }

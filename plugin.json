@@ -2,7 +2,7 @@
   "id": "kdeplasma",
   "name": "KDE Plasma",
   "version": "1.2.0",
-  "sdkVersion": "1.23",
+  "sdkVersion": "1.24",
   "entryAssembly": "LoupixDeck.Plugin.KDEPlasma.dll",
   "platform": "Linux",
   "author": "RadiatorTwo",

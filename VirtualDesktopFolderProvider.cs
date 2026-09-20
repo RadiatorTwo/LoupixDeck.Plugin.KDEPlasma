@@ -16,14 +16,23 @@ public sealed class VirtualDesktopFolderProvider : FolderProviderBase
     private readonly KdeFolderGrid _grid;
     private readonly Func<bool> _showNames;
 
-    internal VirtualDesktopFolderProvider(VirtualDesktopClient desktops, KdeFolderGrid grid, Func<bool> showNames)
+    private readonly Func<string, string> _translate;
+
+    internal VirtualDesktopFolderProvider(
+        VirtualDesktopClient desktops,
+        KdeFolderGrid grid,
+        Func<bool> showNames,
+        Func<string, string> translate)
     {
         _desktops = desktops;
         _grid = grid;
         _showNames = showNames;
+        _translate = translate;
     }
 
-    public override string Title => "Virtual Desktops";
+    // The host translates what a plugin declares; a folder title is built at runtime, so the
+    // plugin looks it up itself against the same files.
+    public override string Title => _translate("Virtual Desktops");
 
     public override void OnEnter() => _desktops.Changed += RaiseEntriesChanged;
 

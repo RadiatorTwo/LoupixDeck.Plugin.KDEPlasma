@@ -9,7 +9,7 @@ namespace LoupixDeck.Plugin.KDEPlasma;
 internal sealed class KdeTextDisplayCommand(
     CommandDescriptor descriptor,
     TimeSpan updateInterval,
-    Func<string> getText,
+    Func<CommandContext, string> getText,
     Func<CommandContext, Task>? action = null) : IDisplayCommand
 {
     /// <summary>Shown while a cache was never filled successfully.</summary>
@@ -25,7 +25,7 @@ internal sealed class KdeTextDisplayCommand(
     {
         try
         {
-            return getText();
+            return getText(ctx);
         }
         catch (Exception)
         {

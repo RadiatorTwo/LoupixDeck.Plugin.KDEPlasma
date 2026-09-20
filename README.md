@@ -136,6 +136,15 @@ not require restarting LoupixDeck.
 - Activity icons in the Activities folder — KDE reports icon theme names, which the SDK cannot
   render yet, so the folder is text only.
 
+## Languages
+
+The plugin ships `strings.de.json` and `strings.es.json` next to `plugin.json`. English is the
+source language and doubles as the key, so a missing entry falls back to the English text instead of
+blanking out. Everything the plugin declares — command names, descriptions, groups, setting labels —
+is translated by the host at display time, and text the plugin builds while running, such as the
+status of a settings action or a folder title, is looked up by the plugin itself through
+`IPluginHost.Tr`. This needs SDK 1.24 and a host that implements it.
+
 ## Build and local test
 
 The SDK package is resolved from the sibling SDK repository, so clone `LoupixDeck.PluginSdk` next to
