@@ -210,6 +210,11 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
         if (_capabilities.HasWindowBridge && _bridge is not null)
         {
             _commands.AddRange(KdeDisplayCommands.CreateActiveWindowDisplays(_bridge));
+
+            if (_desktops is not null)
+            {
+                _commands.AddRange(WindowBridgeCommands.Create(_bridge, _desktops));
+            }
         }
 
         if (_plasmaVersion is not null)
