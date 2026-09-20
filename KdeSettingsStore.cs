@@ -10,10 +10,11 @@ internal sealed class KdeSettingsStore(IPluginSettings settings)
 {
     public const string DesktopNamesKey = "display:desktopNames";
     public const string TimeoutKey = "behavior:dbusTimeoutMs";
+    public const string BridgeInstalledKey = "bridge:installed";
+    public const string BridgeVersionKey = "bridge:version";
 
     // Reserved for later rounds so their keys cannot collide:
-    // "display:hiddenActivities", "display:overviewEffect", "display:monitorOrder",
-    // "bridge:installed", "bridge:version".
+    // "display:hiddenActivities", "display:overviewEffect", "display:monitorOrder".
 
     public const bool DefaultDesktopNames = true;
     public const int DefaultTimeoutMilliseconds = 2000;
@@ -32,5 +33,20 @@ internal sealed class KdeSettingsStore(IPluginSettings settings)
             long stored = settings.Get(TimeoutKey, (long)DefaultTimeoutMilliseconds);
             return (int)Math.Clamp(stored, MinimumTimeoutMilliseconds, MaximumTimeoutMilliseconds);
         }
+    }
+
+    /// <summary>Whether the user installed the KWin bridge script. Absent in an older file, which
+    /// reads as false and matches a profile that never had a bridge.</summary>
+    public bool BridgeInstalled => settings.Get(BridgeInstalledKey, false);
+
+    /// <summary>The script version that was written last, empty when none was.</summary>
+    public string BridgeVersion => settings.Get(BridgeVersionKey, string.Empty) ?? string.Empty;
+
+    /// <summary>Records what the bridge installation did, so the settings page can report it.</summary>
+    public void SetBridgeInstalled(bool installed, string version)
+    {
+        settings.Set(BridgeInstalledKey, installed);
+        settings.Set(BridgeVersionKey, installed ? version : string.Empty);
+        settings.Save();
     }
 }

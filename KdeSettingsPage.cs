@@ -36,8 +36,118 @@ internal static class KdeSettingsPage
             Kind = PluginSettingKind.Number,
             Description = "How long a KDE call may take before it is given up (250 to 10000)",
             DefaultValue = KdeSettingsStore.DefaultTimeoutMilliseconds
+        },
+        new PluginSettingDescriptor
+        {
+            Key = "__heading_bridge",
+            Label = "KWin bridge",
+            Kind = PluginSettingKind.Heading,
+            Description = "An optional KWin script that reports the active window and moves it to a "
+                          + "named desktop or monitor. Everything else works without it."
         }
     ];
+
+    /// <summary>The buttons that manage the KWin bridge script.</summary>
+    public static IReadOnlyList<PluginSettingAction> BuildBridgeActions(
+        KWinBridgeInstaller? installer,
+        KWinBridgeClient? bridge,
+        KdeSettingsStore? settings)
+    {
+        return
+        [
+            new PluginSettingAction
+            {
+                Label = "Bridge status",
+                Invoke = () => Task.FromResult(DescribeBridge(installer, bridge))
+            },
+            new PluginSettingAction
+            {
+                Label = "Install or update bridge",
+                Invoke = () => InstallBridgeAsync(installer, bridge, settings)
+            },
+            new PluginSettingAction
+            {
+                Label = "Remove bridge",
+                Invoke = () => RemoveBridgeAsync(installer, bridge, settings)
+            }
+        ];
+    }
+
+    private static string DescribeBridge(KWinBridgeInstaller? installer, KWinBridgeClient? bridge)
+    {
+        if (installer is null)
+        {
+            return "The plugin is not active on this session.";
+        }
+
+        StringBuilder status = new();
+        status.Append(installer.Inspect().Describe());
+
+        if (bridge is not null)
+        {
+            status.Append(bridge.Connected ? " · connected" : " · not connected");
+
+            if (bridge.Connected)
+            {
+                status.Append(" · ")
+                    .Append(bridge.Outputs.Count.ToString(CultureInfo.InvariantCulture))
+                    .Append(" monitors");
+            }
+        }
+
+        status.Append(" · ").Append(KWinBridgeInstaller.ScriptPath);
+        return status.ToString();
+    }
+
+    private static async Task<string> InstallBridgeAsync(
+        KWinBridgeInstaller? installer,
+        KWinBridgeClient? bridge,
+        KdeSettingsStore? settings)
+    {
+        if (installer is null)
+        {
+            return "The plugin is not active on this session.";
+        }
+
+        if (!await installer.InstallAsync().ConfigureAwait(false))
+        {
+            return "The bridge could not be written, see the log.";
+        }
+
+        BridgeInstallState state = installer.Inspect();
+        settings?.SetBridgeInstalled(state.IsUsable, state.InstalledVersion);
+
+        if (bridge is not null)
+        {
+            await bridge.SeedAsync().ConfigureAwait(false);
+        }
+
+        return $"{state.Describe()}. Restart LoupixDeck to get the bridge commands.";
+    }
+
+    private static async Task<string> RemoveBridgeAsync(
+        KWinBridgeInstaller? installer,
+        KWinBridgeClient? bridge,
+        KdeSettingsStore? settings)
+    {
+        if (installer is null)
+        {
+            return "The plugin is not active on this session.";
+        }
+
+        if (bridge is not null)
+        {
+            await bridge.UnloadScriptAsync().ConfigureAwait(false);
+        }
+
+        if (!installer.Remove())
+        {
+            return "The bridge could not be removed, see the log.";
+        }
+
+        settings?.SetBridgeInstalled(false, string.Empty);
+        return "The bridge was removed. Restart LoupixDeck to drop its commands.";
+    }
 
     /// <summary>Re-runs the capability detection and reports what this session offers.</summary>
     public static async Task<string> TestCapabilitiesAsync(

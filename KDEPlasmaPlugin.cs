@@ -107,7 +107,8 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
         {
             Label = "Test detected capabilities",
             Invoke = () => KdeSettingsPage.TestCapabilitiesAsync(_session, _bridgeInstaller, _desktops, _activities, _nightLight)
-        }
+        },
+        .. KdeSettingsPage.BuildBridgeActions(_bridgeInstaller, _bridge, _settings)
     ];
 
     public void OnSettingsSaved()

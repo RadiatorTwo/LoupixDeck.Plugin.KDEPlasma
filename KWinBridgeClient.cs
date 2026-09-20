@@ -160,6 +160,19 @@ internal sealed class KWinBridgeClient : IDisposable
             }));
     }
 
+    /// <summary>Takes the script out of KWin again, for example before it is deleted.</summary>
+    public async Task UnloadScriptAsync()
+    {
+        lock (_gate)
+        {
+            _connected = false;
+            _scriptVersion = string.Empty;
+        }
+
+        await _scripting.UnloadAsync(KWinBridgeProtocol.ScriptPluginName).ConfigureAwait(false);
+        Changed?.Invoke();
+    }
+
     public void Dispose()
     {
         _session.ConnectionReady -= OnConnectionReady;
