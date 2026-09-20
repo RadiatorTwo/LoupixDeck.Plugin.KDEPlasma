@@ -29,7 +29,7 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
     {
         Id = "kdeplasma",
         Name = "KDE Plasma",
-        Version = new Version(1, 0, 0),
+        Version = new Version(1, 2, 0),
         SdkVersion = SdkInfo.Version,
         Author = "RadiatorTwo",
         Description = "KDE Plasma desktop control: virtual desktops, window actions, Activities, Overview, Night Color and session commands."
