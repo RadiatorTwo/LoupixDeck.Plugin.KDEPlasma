@@ -39,6 +39,9 @@ internal sealed class KWinBridgeEndpoint(IPluginLogger logger) : IPathMethodHand
 
     private long _lastWarnTimestamp;
 
+    /// <summary>The connection this object is served on, so a repeated attach is a no-op.</summary>
+    private DBusConnection? _attachedConnection;
+
     public string Path => KWinBridgeProtocol.ObjectPath;
 
     public bool HandlesChildPaths => false;
@@ -62,13 +65,20 @@ internal sealed class KWinBridgeEndpoint(IPluginLogger logger) : IPathMethodHand
     /// </summary>
     public async Task<bool> AttachAsync(DBusConnection connection)
     {
+        if (ReferenceEquals(_attachedConnection, connection))
+        {
+            return IsAttached;
+        }
+
         try
         {
             connection.AddMethodHandler(this);
+            _attachedConnection = connection;
 
             if (!await connection.TryRequestNameAsync(KWinBridgeProtocol.BusName, RequestNameOptions.None).ConfigureAwait(false))
             {
                 connection.RemoveMethodHandler(Path);
+                _attachedConnection = null;
                 logger.Info($"KDE Plasma: {KWinBridgeProtocol.BusName} is already owned, the KWin bridge stays inactive.");
                 IsAttached = false;
                 return false;
@@ -80,6 +90,7 @@ internal sealed class KWinBridgeEndpoint(IPluginLogger logger) : IPathMethodHand
         catch (Exception ex)
         {
             logger.Warn($"KDE Plasma: the KWin bridge endpoint could not be published: {ex.Message}");
+            _attachedConnection = null;
             IsAttached = false;
             return false;
         }
