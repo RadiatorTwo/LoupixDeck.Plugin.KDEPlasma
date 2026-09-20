@@ -61,7 +61,7 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
             _grid = KdeFolderGridResolver.Resolve(host);
             BuildCommands();
 
-            _binder = new KdeStateBinder(host, _kwin!, _desktops!, _activities!, _nightLight!);
+            _binder = new KdeStateBinder(host, _kwin!, _desktops!, _activities!, _nightLight!, _bridge!);
             _binder.Start();
             session.ServiceOwnerChanged += OnServiceOwnerChanged;
 
@@ -205,6 +205,11 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
             _commands.AddRange(ActivityCommands.Create(_activities));
             _commands.Add(KdeDisplayCommands.CreateActivityDisplay(_activities));
             _commands.Add(KdeDisplayCommands.CreateActivityFolder(_activities, _grid!));
+        }
+
+        if (_capabilities.HasWindowBridge && _bridge is not null)
+        {
+            _commands.AddRange(KdeDisplayCommands.CreateActiveWindowDisplays(_bridge));
         }
 
         if (_plasmaVersion is not null)

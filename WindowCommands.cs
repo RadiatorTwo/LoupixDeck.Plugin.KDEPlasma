@@ -9,6 +9,13 @@ namespace LoupixDeck.Plugin.KDEPlasma;
 /// </summary>
 internal static class WindowCommands
 {
+    public const string MaximizeName = KdeCommands.Prefix + "WindowMaximize";
+    public const string KeepAboveName = KdeCommands.Prefix + "WindowKeepAbove";
+    public const string FullscreenName = KdeCommands.Prefix + "WindowFullscreen";
+
+    public const string OnState = "On";
+    public const string OffState = "Off";
+
     /// <summary>The highest desktop and screen slot KWin offers as a global shortcut.</summary>
     private const int MaximumDesktopSlot = 20;
     private const int MaximumScreenSlot = 7;
@@ -18,10 +25,10 @@ internal static class WindowCommands
         List<IPluginCommand> commands = [];
 
         AddFixed(commands, accel, capabilities, "WindowMinimize", "KDE: Minimize Window", "Window Minimize");
-        AddFixed(commands, accel, capabilities, "WindowMaximize", "KDE: Maximize / Restore Window", "Window Maximize");
+        AddFixed(commands, accel, capabilities, "WindowMaximize", "KDE: Maximize / Restore Window", "Window Maximize", "The window is maximized");
         AddFixed(commands, accel, capabilities, "WindowClose", "KDE: Close Window", "Window Close");
-        AddFixed(commands, accel, capabilities, "WindowFullscreen", "KDE: Toggle Fullscreen", "Window Fullscreen");
-        AddFixed(commands, accel, capabilities, "WindowKeepAbove", "KDE: Toggle Keep Above", "Window Above Other Windows");
+        AddFixed(commands, accel, capabilities, "WindowFullscreen", "KDE: Toggle Fullscreen", "Window Fullscreen", "The window is fullscreen");
+        AddFixed(commands, accel, capabilities, "WindowKeepAbove", "KDE: Toggle Keep Above", "Window Above Other Windows", "The window stays above the others");
 
         AddFixed(commands, accel, capabilities, "WindowToDesktopNext", "KDE: Window to Next Desktop", "Window to Next Desktop");
         AddFixed(commands, accel, capabilities, "WindowToDesktopPrevious", "KDE: Window to Previous Desktop", "Window to Previous Desktop");
@@ -65,19 +72,31 @@ internal static class WindowCommands
         KdeCapabilities capabilities,
         string name,
         string displayName,
-        string actionName)
+        string actionName,
+        string? onStateDescription = null)
     {
         if (!capabilities.HasShortcut(actionName))
         {
             return;
         }
 
+        // Only the KWin bridge can report a window state, so without it the button stays stateless
+        // instead of showing a state that never changes.
+        bool withState = onStateDescription is not null && capabilities.HasWindowBridge;
+
         CommandDescriptor descriptor = new()
         {
             CommandName = KdeCommands.Prefix + name,
             DisplayName = displayName,
             Group = KdeCommands.Group,
-            HiddenFromMenu = true
+            HiddenFromMenu = true,
+            States = withState
+                ?
+                [
+                    new ButtonStateDescriptor { Name = OffState, Description = "The window is in its normal state" },
+                    new ButtonStateDescriptor { Name = OnState, Description = onStateDescription! }
+                ]
+                : []
         };
 
         commands.Add(new KdeShortcutCommand(descriptor, accel, actionName));

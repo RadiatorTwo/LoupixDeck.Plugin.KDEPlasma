@@ -12,7 +12,8 @@ internal sealed class KdeStateBinder(
     KWinClient kwin,
     VirtualDesktopClient desktops,
     ActivityManagerClient activities,
-    NightLightClient nightLight) : IDisposable
+    NightLightClient nightLight,
+    KWinBridgeClient bridge) : IDisposable
 {
     private bool _started;
 
@@ -27,6 +28,7 @@ internal sealed class KdeStateBinder(
         desktops.Changed += OnDesktopsChanged;
         activities.Changed += OnActivitiesChanged;
         nightLight.Changed += OnNightLightChanged;
+        bridge.Changed += OnBridgeChanged;
         _started = true;
     }
 
@@ -37,6 +39,7 @@ internal sealed class KdeStateBinder(
         OnDesktopsChanged();
         OnActivitiesChanged();
         OnNightLightChanged();
+        OnBridgeChanged();
     }
 
     public void Dispose()
@@ -50,6 +53,7 @@ internal sealed class KdeStateBinder(
         desktops.Changed -= OnDesktopsChanged;
         activities.Changed -= OnActivitiesChanged;
         nightLight.Changed -= OnNightLightChanged;
+        bridge.Changed -= OnBridgeChanged;
         _started = false;
     }
 
@@ -115,6 +119,33 @@ internal sealed class KdeStateBinder(
                 enabled ? NightColorCommands.OnState : NightColorCommands.OffState);
             host.RequestButtonRefresh(NightColorCommands.StatusName);
         });
+    }
+
+    /// <summary>Pushes the window state the KWin bridge reported, which nothing else can supply.</summary>
+    private void OnBridgeChanged()
+    {
+        if (!bridge.Connected)
+        {
+            return;
+        }
+
+        ActiveWindowInfo window = bridge.ActiveWindow;
+
+        Dispatch(() =>
+        {
+            host.RequestButtonRefresh(KdeDisplayCommands.ActiveWindowTitleName);
+            host.RequestButtonRefresh(KdeDisplayCommands.ActiveWindowAppIdName);
+            host.RequestButtonRefresh(KdeDisplayCommands.ActiveWindowStateName);
+
+            SetWindowState(WindowCommands.MaximizeName, window.Present && window.Maximized);
+            SetWindowState(WindowCommands.KeepAboveName, window.Present && window.KeepAbove);
+            SetWindowState(WindowCommands.FullscreenName, window.Present && window.FullScreen);
+        });
+    }
+
+    private void SetWindowState(string commandName, bool on)
+    {
+        host.SetActiveButtonState(commandName, on ? WindowCommands.OnState : WindowCommands.OffState);
     }
 
     private void Dispatch(Action action)
