@@ -22,4 +22,10 @@
     <EmbeddedResource Include="KWinBridgeScript.js" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The host reads these straight off disk next to plugin.json, so they have to be copied
+         like any other content file. -->
+    <Content Include="strings.*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
