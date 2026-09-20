@@ -15,6 +15,8 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
     private ActivityManagerClient? _activities;
     private NightLightClient? _nightLight;
     private KGlobalAccelClient? _accel;
+    private KWinBridgeInstaller? _bridgeInstaller;
+    private KWinBridgeClient? _bridge;
     private ScreenSaverClient? _screenSaver;
     private KRunnerClient? _krunner;
     private PlasmaVersionClient? _plasmaVersion;
@@ -27,7 +29,7 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
     {
         Id = "kdeplasma",
         Name = "KDE Plasma",
-        Version = new Version(1, 0, 0),
+        Version = new Version(1, 2, 0),
         SdkVersion = SdkInfo.Version,
         Author = "RadiatorTwo",
         Description = "KDE Plasma desktop control: virtual desktops, window actions, Activities, Overview, Night Color and session commands."
@@ -48,7 +50,8 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
                 return;
             }
 
-            _capabilities = new KdeCapabilityDetector(session).DetectAsync().WaitAsync(StartupTimeout).GetAwaiter().GetResult();
+            _bridgeInstaller = new KWinBridgeInstaller(host.Logger);
+            _capabilities = new KdeCapabilityDetector(session, _bridgeInstaller).DetectAsync().WaitAsync(StartupTimeout).GetAwaiter().GetResult();
             host.Logger.Info(
                 $"KDE Plasma: Plasma {(_capabilities.PlasmaVersion.Length > 0 ? _capabilities.PlasmaVersion : "unknown")}, " +
                 $"{_capabilities.KWinShortcuts.Count} KWin shortcuts, effects: {string.Join(", ", _capabilities.SupportedEffects)}.");
@@ -58,7 +61,7 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
             _grid = KdeFolderGridResolver.Resolve(host);
             BuildCommands();
 
-            _binder = new KdeStateBinder(host, _kwin!, _desktops!, _activities!, _nightLight!);
+            _binder = new KdeStateBinder(host, _kwin!, _desktops!, _activities!, _nightLight!, _bridge!);
             _binder.Start();
             session.ServiceOwnerChanged += OnServiceOwnerChanged;
 
@@ -93,7 +96,7 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
     /// </summary>
     public Task<IReadOnlyList<MenuNode>> GetMenuNodes(ButtonTargets target)
     {
-        return Task.FromResult(KdeMenuTree.Build(_commands, _desktops, _activities));
+        return Task.FromResult(KdeMenuTree.Build(_commands, _desktops, _activities, _bridge, IsActivityHidden, MonitorOrder));
     }
 
     public IReadOnlyList<PluginSettingDescriptor> SettingsSchema => KdeSettingsPage.BuildSchema();
@@ -103,8 +106,9 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
         new PluginSettingAction
         {
             Label = "Test detected capabilities",
-            Invoke = () => KdeSettingsPage.TestCapabilitiesAsync(_session, _desktops, _activities, _nightLight)
-        }
+            Invoke = () => KdeSettingsPage.TestCapabilitiesAsync(_session, _bridgeInstaller, _desktops, _activities, _nightLight)
+        },
+        .. KdeSettingsPage.BuildBridgeActions(_bridgeInstaller, _bridge, _settings)
     ];
 
     public void OnSettingsSaved()
@@ -120,7 +124,17 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
         host.RequestButtonRefresh(KdeDisplayCommands.CurrentDesktopName);
         host.RequestButtonRefresh(KdeDisplayCommands.CurrentDesktopNameName);
         host.RequestButtonRefresh(KdeDisplayCommands.DesktopFolderName);
+        host.RequestButtonRefresh(KdeDisplayCommands.ActivityFolderName);
     }
+
+    /// <summary>The monitor order the picker uses.</summary>
+    private IReadOnlyList<string> MonitorOrder => _settings?.MonitorOrder ?? [];
+
+    /// <summary>Whether an Activity is left out of the folder and the picker.</summary>
+    private bool IsActivityHidden(KdeActivity activity) => _settings?.IsActivityHidden(activity) ?? false;
+
+    /// <summary>Which Overview effect the Overview button opens.</summary>
+    private string OverviewEffect => _settings?.OverviewEffect ?? KdeSettingsStore.DefaultOverviewEffect;
 
     /// <summary>Whether desktop buttons show names instead of numbers.</summary>
     private bool ShowDesktopNames => _settings?.ShowDesktopNames ?? KdeSettingsStore.DefaultDesktopNames;
@@ -143,12 +157,15 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
 
         _binder?.Dispose();
         _binder = null;
+        _bridge?.Dispose();
         _desktops?.Dispose();
         _activities?.Dispose();
         _nightLight?.Dispose();
         _kwin?.Dispose();
         _session?.Dispose();
 
+        _bridge = null;
+        _bridgeInstaller = null;
         _desktops = null;
         _activities = null;
         _nightLight = null;
@@ -166,6 +183,7 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
     private void CreateClients(KdeSession session)
     {
         _accel = new KGlobalAccelClient(session);
+        _bridge = new KWinBridgeClient(session, _host!.Logger, _accel, _bridgeInstaller!);
         _kwin = new KWinClient(session);
         _desktops = new VirtualDesktopClient(session);
         _activities = new ActivityManagerClient(session);
@@ -182,7 +200,7 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
         if (_capabilities.HasKGlobalAccel && _accel is not null)
         {
             _commands.AddRange(WindowCommands.Create(_accel, _capabilities));
-            _commands.AddRange(OverviewCommands.Create(_accel, _capabilities));
+            _commands.AddRange(OverviewCommands.Create(_accel, _capabilities, () => OverviewEffect));
         }
 
         if (_capabilities.HasKWin && _kwin is not null && _desktops is not null)
@@ -197,7 +215,17 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
         {
             _commands.AddRange(ActivityCommands.Create(_activities));
             _commands.Add(KdeDisplayCommands.CreateActivityDisplay(_activities));
-            _commands.Add(KdeDisplayCommands.CreateActivityFolder(_activities, _grid!));
+            _commands.Add(KdeDisplayCommands.CreateActivityFolder(_activities, _grid!, IsActivityHidden));
+        }
+
+        if (_capabilities.HasWindowBridge && _bridge is not null)
+        {
+            _commands.AddRange(KdeDisplayCommands.CreateActiveWindowDisplays(_bridge));
+
+            if (_desktops is not null)
+            {
+                _commands.AddRange(WindowBridgeCommands.Create(_bridge, _desktops));
+            }
         }
 
         if (_plasmaVersion is not null)
@@ -235,6 +263,12 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
         }
 
         await _plasmaVersion!.SeedAsync().ConfigureAwait(false);
+
+        if (_bridge is not null)
+        {
+            await _bridge.StartAsync().ConfigureAwait(false);
+        }
+
         _binder?.ReplayAll();
     }
 
@@ -257,6 +291,13 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
         }
 
         await _plasmaVersion!.SeedAsync().ConfigureAwait(false);
+
+        if (_bridge is not null)
+        {
+            // KWin drops every loaded script when it restarts, so the bridge has to be put back.
+            await _bridge.SeedAsync().ConfigureAwait(false);
+        }
+
         _binder?.ReplayAll();
     }
 

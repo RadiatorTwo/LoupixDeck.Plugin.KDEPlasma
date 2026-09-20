@@ -13,11 +13,13 @@ public sealed class ActivityFolderProvider : FolderProviderBase
 
     private readonly ActivityManagerClient _activities;
     private readonly KdeFolderGrid _grid;
+    private readonly Func<KdeActivity, bool> _isHidden;
 
-    internal ActivityFolderProvider(ActivityManagerClient activities, KdeFolderGrid grid)
+    internal ActivityFolderProvider(ActivityManagerClient activities, KdeFolderGrid grid, Func<KdeActivity, bool> isHidden)
     {
         _activities = activities;
         _grid = grid;
+        _isHidden = isHidden;
     }
 
     public override string Title => "Activities";
@@ -28,7 +30,16 @@ public sealed class ActivityFolderProvider : FolderProviderBase
 
     public override IReadOnlyList<FolderEntry> BuildEntries()
     {
-        IReadOnlyList<KdeActivity> activities = _activities.Activities;
+        // The hidden ones are filtered first, so hiding one does not leave a gap in the grid.
+        List<KdeActivity> activities = [];
+        foreach (KdeActivity candidate in _activities.Activities)
+        {
+            if (!_isHidden(candidate))
+            {
+                activities.Add(candidate);
+            }
+        }
+
         string currentId = _activities.CurrentId;
 
         List<FolderEntry> entries = new(activities.Count);

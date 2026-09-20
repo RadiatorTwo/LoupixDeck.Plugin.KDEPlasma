@@ -57,8 +57,17 @@ internal sealed class KdeSession(IPluginLogger logger) : IDisposable
     /// <summary>The services that own a bus name right now.</summary>
     public IReadOnlySet<string> AvailableServices { get; private set; } = new HashSet<string>(StringComparer.Ordinal);
 
+    /// <summary>The raw connection, or null while the session is not connected.</summary>
+    public DBusConnection? Connection => _connection;
+
     /// <summary>Raised when a watched service gained (true) or lost (false) its owner.</summary>
     public event Action<string, bool>? ServiceOwnerChanged;
+
+    /// <summary>
+    /// Raised once a connection is usable, including after a reconnect. Exported objects and owned
+    /// bus names do not survive a reconnect, so everything that serves on the bus re-registers here.
+    /// </summary>
+    public event Action<DBusConnection>? ConnectionReady;
 
     /// <summary>Connects to the session bus and probes for KDE. Safe to call once, from Initialize.</summary>
     public async Task<bool> ConnectAsync()
@@ -90,6 +99,7 @@ internal sealed class KdeSession(IPluginLogger logger) : IDisposable
             _nameOwnerWatch = await WatchNameOwnerChangesAsync().ConfigureAwait(false);
             IsSupported = true;
             _ = Task.Run(() => MonitorConnectionAsync(connection), _shutdown.Token);
+            RaiseConnectionReady(connection);
             return true;
         }
         catch (Exception ex)
@@ -129,6 +139,19 @@ internal sealed class KdeSession(IPluginLogger logger) : IDisposable
         _nameOwnerWatch = null;
         Disconnect();
         _shutdown.Dispose();
+    }
+
+    /// <summary>Tells the subscribers about a usable connection without letting one of them break the setup.</summary>
+    private void RaiseConnectionReady(DBusConnection connection)
+    {
+        try
+        {
+            ConnectionReady?.Invoke(connection);
+        }
+        catch (Exception ex)
+        {
+            logger.Warn($"KDE Plasma: a connection handler failed: {ex.Message}");
+        }
     }
 
     private void Disconnect()

@@ -20,6 +20,12 @@ internal sealed class KdeCapabilities
 
     public bool NightLightAvailable { get; init; }
 
+    /// <summary>What the KWin bridge directory currently holds.</summary>
+    public BridgeInstallState? Bridge { get; init; }
+
+    /// <summary>True when a usable bridge script is installed, so its commands may be offered.</summary>
+    public bool HasWindowBridge { get; init; }
+
     /// <summary>Global shortcut action names of the kwin component.</summary>
     public IReadOnlySet<string> KWinShortcuts { get; init; } = new HashSet<string>(StringComparer.Ordinal);
 

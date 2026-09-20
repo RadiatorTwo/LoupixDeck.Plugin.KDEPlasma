@@ -10,10 +10,14 @@ internal sealed class KdeSettingsStore(IPluginSettings settings)
 {
     public const string DesktopNamesKey = "display:desktopNames";
     public const string TimeoutKey = "behavior:dbusTimeoutMs";
+    public const string BridgeInstalledKey = "bridge:installed";
+    public const string BridgeVersionKey = "bridge:version";
+    public const string OverviewEffectKey = "display:overviewEffect";
+    public const string HiddenActivitiesKey = "display:hiddenActivities";
+    public const string MonitorOrderKey = "display:monitorOrder";
 
-    // Reserved for later rounds so their keys cannot collide:
-    // "display:hiddenActivities", "display:overviewEffect", "display:monitorOrder",
-    // "bridge:installed", "bridge:version".
+    /// <summary>The Overview effect a fresh installation uses, and the fallback for a bad value.</summary>
+    public const string DefaultOverviewEffect = OverviewEffects.Overview;
 
     public const bool DefaultDesktopNames = true;
     public const int DefaultTimeoutMilliseconds = 2000;
@@ -32,5 +36,60 @@ internal sealed class KdeSettingsStore(IPluginSettings settings)
             long stored = settings.Get(TimeoutKey, (long)DefaultTimeoutMilliseconds);
             return (int)Math.Clamp(stored, MinimumTimeoutMilliseconds, MaximumTimeoutMilliseconds);
         }
+    }
+
+    /// <summary>
+    /// Which Overview effect <c>KdePlasma.Overview</c> opens. An absent or unknown value reads as
+    /// the plain Overview, so a settings file from an older version behaves exactly as before.
+    /// </summary>
+    public string OverviewEffect
+    {
+        get
+        {
+            string stored = settings.Get(OverviewEffectKey, DefaultOverviewEffect) ?? DefaultOverviewEffect;
+            return OverviewEffects.Normalize(stored);
+        }
+    }
+
+    /// <summary>
+    /// The Activities the user does not want to see, by name or by id. Absent in an older settings
+    /// file, which reads as an empty list and therefore hides nothing.
+    /// </summary>
+    public IReadOnlyList<string> HiddenActivities => KdeSettingsList.Parse(settings.Get(HiddenActivitiesKey, string.Empty));
+
+    /// <summary>Whether an Activity is hidden from the folder and the command picker.</summary>
+    public bool IsActivityHidden(KdeActivity activity)
+    {
+        foreach (string entry in HiddenActivities)
+        {
+            if (string.Equals(entry, activity.Id, StringComparison.Ordinal)
+                || string.Equals(entry, activity.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// The connector names in the order the user wants to see them, for example <c>DP-1, HDMI-A-1</c>.
+    /// Absent in an older settings file, which reads as an empty list and keeps the KWin order.
+    /// </summary>
+    public IReadOnlyList<string> MonitorOrder => KdeSettingsList.Parse(settings.Get(MonitorOrderKey, string.Empty));
+
+    /// <summary>Whether the user installed the KWin bridge script. Absent in an older file, which
+    /// reads as false and matches a profile that never had a bridge.</summary>
+    public bool BridgeInstalled => settings.Get(BridgeInstalledKey, false);
+
+    /// <summary>The script version that was written last, empty when none was.</summary>
+    public string BridgeVersion => settings.Get(BridgeVersionKey, string.Empty) ?? string.Empty;
+
+    /// <summary>Records what the bridge installation did, so the settings page can report it.</summary>
+    public void SetBridgeInstalled(bool installed, string version)
+    {
+        settings.Set(BridgeInstalledKey, installed);
+        settings.Set(BridgeVersionKey, installed ? version : string.Empty);
+        settings.Save();
     }
 }

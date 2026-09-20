@@ -67,6 +67,43 @@ button stays a no-op instead of failing.
 `PlasmaVersion` and `NightColorStatus` are touch buttons that show live values. They read cached
 state that D-Bus signals keep current, so they update as soon as KDE reports a change.
 
+`KdePlasma.ActiveWindowTitle`, `ActiveWindowAppId` and `ActiveWindowState` do the same for the
+active window, but they need the KWin bridge below. Without it they are not offered at all.
+
+## KWin bridge
+
+KWin exposes no per-window D-Bus interface, so on Wayland nothing outside KWin can read the active
+window or move it to a named desktop or monitor. The optional bridge closes that gap with a small
+KWin script that reports changes back to the plugin over the session bus.
+
+Install it from the plugin settings. It adds:
+
+| Command | What it does |
+| --- | --- |
+| `KdePlasma.ActiveWindowTitle` / `ActiveWindowAppId` / `ActiveWindowState` | Live values of the active window |
+| `KdePlasma.WindowMoveToDesktop(desktopId)` | Moves the active window to a desktop, addressed by its UUID or its name |
+| `KdePlasma.WindowMoveToOutput(output)` | Moves the active window to the monitor with that connector name |
+
+It also gives `KdePlasma.WindowMaximize`, `WindowKeepAbove` and `WindowFullscreen` an `On` / `Off`
+state that follows the real window.
+
+How it works:
+
+- The plugin owns `org.loupixdeck.KWinBridge` on the session bus. The script announces itself with
+  a protocol version and then reports the active window, the desktops and the outputs.
+- The script is written to `~/.local/share/loupixdeck/kwin-bridge/main.js` and loaded into KWin over
+  `org.kde.kwin.Scripting`. It is deliberately not a KWin script package: KWin unloads a script
+  whose name belongs to a package that is switched off in the settings.
+- A KWin script cannot be called directly, so a command is parked in the plugin and the script is
+  woken through the global shortcut it registered, which then picks the command up.
+- The installed file carries its protocol and version in its first line. A file from another version
+  is reported as outdated and its commands stay hidden until it is updated.
+- Everything else works without the bridge, and removing it from the settings takes the whole
+  directory with it.
+
+The command list is read once at startup, so installing or removing the bridge takes effect for the
+commands after LoupixDeck is restarted.
+
 ## Capability detection
 
 At startup the plugin probes the session bus once: which KDE services own a name, which KWin
@@ -81,17 +118,21 @@ not require restarting LoupixDeck.
 ## Settings
 
 - **Show desktop names instead of numbers** — applies to the desktop buttons and the folder.
+- **Overview effect** — what `KdePlasma.Overview` opens: `overview`, `cycle` or `grid`. An unknown
+  value falls back to the plain Overview, and so does an effect this KWin does not offer.
+- **Hidden Activities** — Activities to leave out of the Activities folder and the command picker,
+  by name or id, separated by commas. Switching by name or id still works if a button is bound to it.
+- **Monitor order** — connector names in the order they should appear in the picker, for example
+  `DP-1, HDMI-A-1`. Names that match no current monitor are ignored, the rest keep the KWin order.
+  This needs the KWin bridge, because only the bridge reports the monitor names.
 - **D-Bus timeout (ms)** — how long a KDE call may take before it is given up.
 - **Test detected capabilities** — re-runs the detection and reports what this session offers.
+- **Bridge status** — reports whether the KWin bridge is installed, current and connected.
+- **Install or update bridge** — writes the shipped script and loads it into KWin.
+- **Remove bridge** — unloads the script and deletes its directory.
 
 ## Not included yet
 
-These need the optional KWin script (Level 3 of the design in issue #257) and are planned for a
-later round:
-
-- Active window title, application id and window state as dynamic values.
-- Button states for "window maximized" and "keep above".
-- Moving a window to a specific desktop by UUID or to a monitor identified by name.
 - Activity icons in the Activities folder — KDE reports icon theme names, which the SDK cannot
   render yet, so the folder is text only.
 

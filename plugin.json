@@ -1,7 +1,7 @@
 {
   "id": "kdeplasma",
   "name": "KDE Plasma",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "sdkVersion": "1.23",
   "entryAssembly": "LoupixDeck.Plugin.KDEPlasma.dll",
   "platform": "Linux",

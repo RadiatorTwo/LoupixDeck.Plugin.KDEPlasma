@@ -14,12 +14,16 @@ internal static class KdeDisplayCommands
     public const string DesktopCountName = KdeCommands.Prefix + "DesktopCount";
     public const string CurrentActivityName = KdeCommands.Prefix + "CurrentActivity";
     public const string PlasmaVersionName = KdeCommands.Prefix + "PlasmaVersion";
+    public const string ActiveWindowTitleName = KdeCommands.Prefix + "ActiveWindowTitle";
+    public const string ActiveWindowAppIdName = KdeCommands.Prefix + "ActiveWindowAppId";
+    public const string ActiveWindowStateName = KdeCommands.Prefix + "ActiveWindowState";
     public const string DesktopFolderName = KdeCommands.Prefix + "DesktopFolder";
     public const string ActivityFolderName = KdeCommands.Prefix + "ActivityFolder";
 
     private static readonly TimeSpan DesktopInterval = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan SlowInterval = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan VersionInterval = TimeSpan.FromHours(1);
+    private static readonly TimeSpan WindowInterval = TimeSpan.FromSeconds(1);
 
     public static IEnumerable<IPluginCommand> CreateDesktopDisplays(
         VirtualDesktopClient desktops,
@@ -65,6 +69,92 @@ internal static class KdeDisplayCommands
                     ? desktops.Count.ToString(CultureInfo.InvariantCulture)
                     : KdeTextDisplayCommand.UnknownText)
         ];
+    }
+
+    /// <summary>
+    /// The active window displays. They need the KWin bridge, because KWin exposes no per-window
+    /// D-Bus interface, so they show the unknown text while no script is connected.
+    /// </summary>
+    public static IEnumerable<IPluginCommand> CreateActiveWindowDisplays(KWinBridgeClient bridge)
+    {
+        return
+        [
+            new KdeTextDisplayCommand(
+                new CommandDescriptor
+                {
+                    CommandName = ActiveWindowTitleName,
+                    DisplayName = "KDE: Active Window Title",
+                    Group = KdeCommands.Group,
+                    Description = "Shows the title of the active window",
+                    HiddenFromMenu = true
+                },
+                WindowInterval,
+                () => DescribeWindow(bridge, static window => window.Title)),
+
+            new KdeTextDisplayCommand(
+                new CommandDescriptor
+                {
+                    CommandName = ActiveWindowAppIdName,
+                    DisplayName = "KDE: Active Window Application",
+                    Group = KdeCommands.Group,
+                    Description = "Shows the application id of the active window",
+                    HiddenFromMenu = true
+                },
+                WindowInterval,
+                () => DescribeWindow(bridge, static window => window.DisplayAppId)),
+
+            new KdeTextDisplayCommand(
+                new CommandDescriptor
+                {
+                    CommandName = ActiveWindowStateName,
+                    DisplayName = "KDE: Active Window State",
+                    Group = KdeCommands.Group,
+                    Description = "Shows whether the active window is maximized, kept above or fullscreen",
+                    HiddenFromMenu = true
+                },
+                WindowInterval,
+                () => DescribeWindow(bridge, DescribeWindowState))
+        ];
+    }
+
+    /// <summary>Reads one value of the active window, or the unknown text while there is none.</summary>
+    private static string DescribeWindow(KWinBridgeClient bridge, Func<ActiveWindowInfo, string> read)
+    {
+        ActiveWindowInfo window = bridge.ActiveWindow;
+        if (!bridge.Connected || !window.Present)
+        {
+            return KdeTextDisplayCommand.UnknownText;
+        }
+
+        string text = read(window);
+        return text.Length > 0 ? text : KdeTextDisplayCommand.UnknownText;
+    }
+
+    private static string DescribeWindowState(ActiveWindowInfo window)
+    {
+        List<string> parts = [];
+
+        if (window.Maximized)
+        {
+            parts.Add("Maximized");
+        }
+
+        if (window.KeepAbove)
+        {
+            parts.Add("Above");
+        }
+
+        if (window.FullScreen)
+        {
+            parts.Add("Fullscreen");
+        }
+
+        if (window.Minimized)
+        {
+            parts.Add("Minimized");
+        }
+
+        return parts.Count > 0 ? string.Join(", ", parts) : "Normal";
     }
 
     public static IPluginCommand CreateActivityDisplay(ActivityManagerClient activities)
@@ -121,7 +211,10 @@ internal static class KdeDisplayCommands
     }
 
     /// <summary>The button that shows the current Activity and opens the Activities folder.</summary>
-    public static IPluginCommand CreateActivityFolder(ActivityManagerClient activities, KdeFolderGrid grid)
+    public static IPluginCommand CreateActivityFolder(
+        ActivityManagerClient activities,
+        KdeFolderGrid grid,
+        Func<KdeActivity, bool> isHidden)
     {
         return new KdeTextDisplayCommand(
             new CommandDescriptor
@@ -135,7 +228,7 @@ internal static class KdeDisplayCommands
             () => activities.Current?.Name ?? KdeTextDisplayCommand.UnknownText,
             ctx =>
             {
-                ctx.Host.OpenFolder(new ActivityFolderProvider(activities, grid));
+                ctx.Host.OpenFolder(new ActivityFolderProvider(activities, grid, isHidden));
                 return Task.CompletedTask;
             });
     }
