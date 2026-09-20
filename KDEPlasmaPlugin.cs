@@ -96,7 +96,7 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
     /// </summary>
     public Task<IReadOnlyList<MenuNode>> GetMenuNodes(ButtonTargets target)
     {
-        return Task.FromResult(KdeMenuTree.Build(_commands, _desktops, _activities));
+        return Task.FromResult(KdeMenuTree.Build(_commands, _desktops, _activities, _bridge));
     }
 
     public IReadOnlyList<PluginSettingDescriptor> SettingsSchema => KdeSettingsPage.BuildSchema();

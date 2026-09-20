@@ -17,7 +17,8 @@ internal static class KdeMenuTree
     public static IReadOnlyList<MenuNode> Build(
         IEnumerable<IPluginCommand> commands,
         VirtualDesktopClient? desktops,
-        ActivityManagerClient? activities)
+        ActivityManagerClient? activities,
+        KWinBridgeClient? bridge)
     {
         HashSet<string> available = new(StringComparer.Ordinal);
         foreach (IPluginCommand command in commands)
@@ -28,7 +29,7 @@ internal static class KdeMenuTree
         List<MenuNode> sections = [];
 
         AddSection(sections, "Virtual Desktops", BuildDesktopSection(available, desktops));
-        AddSection(sections, "Active Window", BuildWindowSection(available));
+        AddSection(sections, "Active Window", BuildWindowSection(available, desktops, bridge));
         AddSection(sections, "Activities", BuildActivitySection(available, activities));
         AddSection(sections, "Overview and Desktop", BuildOverviewSection(available));
         AddSection(sections, "Night Color", BuildNightColorSection(available));
@@ -90,7 +91,10 @@ internal static class KdeMenuTree
         return nodes;
     }
 
-    private static List<MenuNode> BuildWindowSection(IReadOnlySet<string> available)
+    private static List<MenuNode> BuildWindowSection(
+        IReadOnlySet<string> available,
+        VirtualDesktopClient? desktops,
+        KWinBridgeClient? bridge)
     {
         List<MenuNode> nodes = [];
 
@@ -104,12 +108,42 @@ internal static class KdeMenuTree
         Add(toDesktop, available, "WindowToDesktopNext", "Next Desktop");
         Add(toDesktop, available, "WindowToDesktopPrevious", "Previous Desktop");
         Add(toDesktop, available, "WindowToDesktopNumber", "Desktop by Number");
+
+        // The live list binds the id-based bridge command, so a renamed desktop keeps working.
+        if (desktops is not null && desktops.HasState && available.Contains(WindowBridgeCommands.MoveToDesktopName))
+        {
+            foreach (VirtualDesktop desktop in desktops.Desktops)
+            {
+                toDesktop.Add(new MenuNode
+                {
+                    Name = desktop.Name,
+                    CommandName = WindowBridgeCommands.MoveToDesktopName,
+                    Parameters = new Dictionary<string, string> { ["desktopId"] = desktop.Id }
+                });
+            }
+        }
+
         AddSection(nodes, "Move to Desktop", toDesktop);
 
         List<MenuNode> toScreen = [];
         Add(toScreen, available, "WindowToScreenNext", "Next Screen");
         Add(toScreen, available, "WindowToScreenPrevious", "Previous Screen");
         Add(toScreen, available, "WindowToScreenNumber", "Screen by Index");
+
+        // The monitor names come from the bridge, because KWin reports them to the script only.
+        if (bridge is not null && available.Contains(WindowBridgeCommands.MoveToOutputName))
+        {
+            foreach (BridgeOutput output in bridge.Outputs)
+            {
+                toScreen.Add(new MenuNode
+                {
+                    Name = output.DisplayName,
+                    CommandName = WindowBridgeCommands.MoveToOutputName,
+                    Parameters = new Dictionary<string, string> { ["output"] = output.Name }
+                });
+            }
+        }
+
         AddSection(nodes, "Move to Screen", toScreen);
 
         return nodes;
@@ -188,6 +222,9 @@ internal static class KdeMenuTree
         Add(nodes, available, "DesktopCount", "Desktop Count");
         Add(nodes, available, "CurrentActivity", "Current Activity");
         Add(nodes, available, "PlasmaVersion", "Plasma Version");
+        Add(nodes, available, "ActiveWindowTitle", "Active Window Title");
+        Add(nodes, available, "ActiveWindowAppId", "Active Window Application");
+        Add(nodes, available, "ActiveWindowState", "Active Window State");
 
         return nodes;
     }
