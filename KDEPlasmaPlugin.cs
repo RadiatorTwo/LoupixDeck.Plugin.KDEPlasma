@@ -96,7 +96,7 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
     /// </summary>
     public Task<IReadOnlyList<MenuNode>> GetMenuNodes(ButtonTargets target)
     {
-        return Task.FromResult(KdeMenuTree.Build(_commands, _desktops, _activities, _bridge, IsActivityHidden));
+        return Task.FromResult(KdeMenuTree.Build(_commands, _desktops, _activities, _bridge, IsActivityHidden, MonitorOrder));
     }
 
     public IReadOnlyList<PluginSettingDescriptor> SettingsSchema => KdeSettingsPage.BuildSchema();
@@ -126,6 +126,9 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
         host.RequestButtonRefresh(KdeDisplayCommands.DesktopFolderName);
         host.RequestButtonRefresh(KdeDisplayCommands.ActivityFolderName);
     }
+
+    /// <summary>The monitor order the picker uses.</summary>
+    private IReadOnlyList<string> MonitorOrder => _settings?.MonitorOrder ?? [];
 
     /// <summary>Whether an Activity is left out of the folder and the picker.</summary>
     private bool IsActivityHidden(KdeActivity activity) => _settings?.IsActivityHidden(activity) ?? false;

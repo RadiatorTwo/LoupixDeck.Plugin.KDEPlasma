@@ -19,7 +19,8 @@ internal static class KdeMenuTree
         VirtualDesktopClient? desktops,
         ActivityManagerClient? activities,
         KWinBridgeClient? bridge,
-        Func<KdeActivity, bool> isActivityHidden)
+        Func<KdeActivity, bool> isActivityHidden,
+        IReadOnlyList<string> monitorOrder)
     {
         HashSet<string> available = new(StringComparer.Ordinal);
         foreach (IPluginCommand command in commands)
@@ -30,7 +31,7 @@ internal static class KdeMenuTree
         List<MenuNode> sections = [];
 
         AddSection(sections, "Virtual Desktops", BuildDesktopSection(available, desktops));
-        AddSection(sections, "Active Window", BuildWindowSection(available, desktops, bridge));
+        AddSection(sections, "Active Window", BuildWindowSection(available, desktops, bridge, monitorOrder));
         AddSection(sections, "Activities", BuildActivitySection(available, activities, isActivityHidden));
         AddSection(sections, "Overview and Desktop", BuildOverviewSection(available));
         AddSection(sections, "Night Color", BuildNightColorSection(available));
@@ -95,7 +96,8 @@ internal static class KdeMenuTree
     private static List<MenuNode> BuildWindowSection(
         IReadOnlySet<string> available,
         VirtualDesktopClient? desktops,
-        KWinBridgeClient? bridge)
+        KWinBridgeClient? bridge,
+        IReadOnlyList<string> monitorOrder)
     {
         List<MenuNode> nodes = [];
 
@@ -134,7 +136,7 @@ internal static class KdeMenuTree
         // The monitor names come from the bridge, because KWin reports them to the script only.
         if (bridge is not null && available.Contains(WindowBridgeCommands.MoveToOutputName))
         {
-            foreach (BridgeOutput output in bridge.Outputs)
+            foreach (BridgeOutput output in KdeMonitorOrder.Apply(bridge.Outputs, monitorOrder))
             {
                 toScreen.Add(new MenuNode
                 {

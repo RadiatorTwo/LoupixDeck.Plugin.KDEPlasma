@@ -45,6 +45,15 @@ internal static class KdeSettingsPage
         },
         new PluginSettingDescriptor
         {
+            Key = KdeSettingsStore.MonitorOrderKey,
+            Label = "Monitor order",
+            Kind = PluginSettingKind.Text,
+            Description = "Connector names in the order they should appear in the picker, separated "
+                          + "by commas, for example DP-1, HDMI-A-1. Needs the KWin bridge",
+            DefaultValue = string.Empty
+        },
+        new PluginSettingDescriptor
+        {
             Key = "__heading_behavior",
             Label = "Behaviour",
             Kind = PluginSettingKind.Heading

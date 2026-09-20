@@ -14,9 +14,7 @@ internal sealed class KdeSettingsStore(IPluginSettings settings)
     public const string BridgeVersionKey = "bridge:version";
     public const string OverviewEffectKey = "display:overviewEffect";
     public const string HiddenActivitiesKey = "display:hiddenActivities";
-
-    // Reserved for later rounds so their keys cannot collide:
-    // "display:monitorOrder".
+    public const string MonitorOrderKey = "display:monitorOrder";
 
     /// <summary>The Overview effect a fresh installation uses, and the fallback for a bad value.</summary>
     public const string DefaultOverviewEffect = OverviewEffects.Overview;
@@ -73,6 +71,12 @@ internal sealed class KdeSettingsStore(IPluginSettings settings)
 
         return false;
     }
+
+    /// <summary>
+    /// The connector names in the order the user wants to see them, for example <c>DP-1, HDMI-A-1</c>.
+    /// Absent in an older settings file, which reads as an empty list and keeps the KWin order.
+    /// </summary>
+    public IReadOnlyList<string> MonitorOrder => KdeSettingsList.Parse(settings.Get(MonitorOrderKey, string.Empty));
 
     /// <summary>Whether the user installed the KWin bridge script. Absent in an older file, which
     /// reads as false and matches a profile that never had a bridge.</summary>
