@@ -28,8 +28,12 @@ internal static class KWinBridgeProtocol
     /// <summary>The script pulls the command that is waiting for it.</summary>
     public const string TakeCommandMember = "TakeCommand";
 
-    /// <summary>KWin plugin name of the script, also the directory name below the KWin script path.</summary>
-    public const string ScriptPluginName = "loupixdeck";
+    /// <summary>
+    /// The name KWin knows the loaded script under. It must not match the id of an installed KWin
+    /// script package: <c>start()</c> re-reads the enabled packages and unloads every script whose
+    /// name belongs to a package that is switched off, which would drop the bridge again.
+    /// </summary>
+    public const string ScriptPluginName = "loupixdeck-bridge";
 
     /// <summary>Global shortcut the plugin triggers to make the script pull a command.</summary>
     public const string CommandShortcut = "LoupixDeck Bridge Command";
