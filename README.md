@@ -147,8 +147,8 @@ status of a settings action or a folder title, is looked up by the plugin itself
 
 ## Build and local test
 
-The SDK package is resolved from the sibling SDK repository, so clone `LoupixDeck.PluginSdk` next to
-this repository and build it once.
+The SDK package comes from nuget.org, so the repository builds on its own with nothing cloned next
+to it.
 
 ```bash
 dotnet build LoupixDeck.Plugin.KDEPlasma.csproj -c Release

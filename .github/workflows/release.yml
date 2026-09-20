@@ -14,3 +14,7 @@ permissions:
 jobs:
   release:
     uses: RadiatorTwo/LoupixDeck.PluginSdk/.github/workflows/plugin-release.yml@master
+    with:
+      # The SDK version this plugin references is published on nuget.org, so the workflow does not
+      # have to check the SDK out and build it into a local folder feed.
+      build-sdk: false
