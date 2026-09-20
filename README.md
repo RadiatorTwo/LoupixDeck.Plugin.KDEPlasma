@@ -118,6 +118,13 @@ not require restarting LoupixDeck.
 ## Settings
 
 - **Show desktop names instead of numbers** — applies to the desktop buttons and the folder.
+- **Overview effect** — what `KdePlasma.Overview` opens: `overview`, `cycle` or `grid`. An unknown
+  value falls back to the plain Overview, and so does an effect this KWin does not offer.
+- **Hidden Activities** — Activities to leave out of the Activities folder and the command picker,
+  by name or id, separated by commas. Switching by name or id still works if a button is bound to it.
+- **Monitor order** — connector names in the order they should appear in the picker, for example
+  `DP-1, HDMI-A-1`. Names that match no current monitor are ignored, the rest keep the KWin order.
+  This needs the KWin bridge, because only the bridge reports the monitor names.
 - **D-Bus timeout (ms)** — how long a KDE call may take before it is given up.
 - **Test detected capabilities** — re-runs the detection and reports what this session offers.
 - **Bridge status** — reports whether the KWin bridge is installed, current and connected.
@@ -128,7 +135,6 @@ not require restarting LoupixDeck.
 
 - Activity icons in the Activities folder — KDE reports icon theme names, which the SDK cannot
   render yet, so the folder is text only.
-- A preferred Overview effect, hidden Activities and a custom monitor order in the settings.
 
 ## Build and local test
 
