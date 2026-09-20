@@ -18,7 +18,8 @@ internal static class KdeMenuTree
         IEnumerable<IPluginCommand> commands,
         VirtualDesktopClient? desktops,
         ActivityManagerClient? activities,
-        KWinBridgeClient? bridge)
+        KWinBridgeClient? bridge,
+        Func<KdeActivity, bool> isActivityHidden)
     {
         HashSet<string> available = new(StringComparer.Ordinal);
         foreach (IPluginCommand command in commands)
@@ -30,7 +31,7 @@ internal static class KdeMenuTree
 
         AddSection(sections, "Virtual Desktops", BuildDesktopSection(available, desktops));
         AddSection(sections, "Active Window", BuildWindowSection(available, desktops, bridge));
-        AddSection(sections, "Activities", BuildActivitySection(available, activities));
+        AddSection(sections, "Activities", BuildActivitySection(available, activities, isActivityHidden));
         AddSection(sections, "Overview and Desktop", BuildOverviewSection(available));
         AddSection(sections, "Night Color", BuildNightColorSection(available));
         AddSection(sections, "Session", BuildSessionSection(available));
@@ -149,7 +150,10 @@ internal static class KdeMenuTree
         return nodes;
     }
 
-    private static List<MenuNode> BuildActivitySection(IReadOnlySet<string> available, ActivityManagerClient? activities)
+    private static List<MenuNode> BuildActivitySection(
+        IReadOnlySet<string> available,
+        ActivityManagerClient? activities,
+        Func<KdeActivity, bool> isHidden)
     {
         List<MenuNode> nodes = [];
 
@@ -163,6 +167,11 @@ internal static class KdeMenuTree
             List<MenuNode> live = [];
             foreach (KdeActivity activity in activities.Activities)
             {
+                if (isHidden(activity))
+                {
+                    continue;
+                }
+
                 live.Add(new MenuNode
                 {
                     Name = activity.Name,

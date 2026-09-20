@@ -211,7 +211,10 @@ internal static class KdeDisplayCommands
     }
 
     /// <summary>The button that shows the current Activity and opens the Activities folder.</summary>
-    public static IPluginCommand CreateActivityFolder(ActivityManagerClient activities, KdeFolderGrid grid)
+    public static IPluginCommand CreateActivityFolder(
+        ActivityManagerClient activities,
+        KdeFolderGrid grid,
+        Func<KdeActivity, bool> isHidden)
     {
         return new KdeTextDisplayCommand(
             new CommandDescriptor
@@ -225,7 +228,7 @@ internal static class KdeDisplayCommands
             () => activities.Current?.Name ?? KdeTextDisplayCommand.UnknownText,
             ctx =>
             {
-                ctx.Host.OpenFolder(new ActivityFolderProvider(activities, grid));
+                ctx.Host.OpenFolder(new ActivityFolderProvider(activities, grid, isHidden));
                 return Task.CompletedTask;
             });
     }

@@ -96,7 +96,7 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
     /// </summary>
     public Task<IReadOnlyList<MenuNode>> GetMenuNodes(ButtonTargets target)
     {
-        return Task.FromResult(KdeMenuTree.Build(_commands, _desktops, _activities, _bridge));
+        return Task.FromResult(KdeMenuTree.Build(_commands, _desktops, _activities, _bridge, IsActivityHidden));
     }
 
     public IReadOnlyList<PluginSettingDescriptor> SettingsSchema => KdeSettingsPage.BuildSchema();
@@ -124,7 +124,11 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
         host.RequestButtonRefresh(KdeDisplayCommands.CurrentDesktopName);
         host.RequestButtonRefresh(KdeDisplayCommands.CurrentDesktopNameName);
         host.RequestButtonRefresh(KdeDisplayCommands.DesktopFolderName);
+        host.RequestButtonRefresh(KdeDisplayCommands.ActivityFolderName);
     }
+
+    /// <summary>Whether an Activity is left out of the folder and the picker.</summary>
+    private bool IsActivityHidden(KdeActivity activity) => _settings?.IsActivityHidden(activity) ?? false;
 
     /// <summary>Which Overview effect the Overview button opens.</summary>
     private string OverviewEffect => _settings?.OverviewEffect ?? KdeSettingsStore.DefaultOverviewEffect;
@@ -208,7 +212,7 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
         {
             _commands.AddRange(ActivityCommands.Create(_activities));
             _commands.Add(KdeDisplayCommands.CreateActivityDisplay(_activities));
-            _commands.Add(KdeDisplayCommands.CreateActivityFolder(_activities, _grid!));
+            _commands.Add(KdeDisplayCommands.CreateActivityFolder(_activities, _grid!, IsActivityHidden));
         }
 
         if (_capabilities.HasWindowBridge && _bridge is not null)

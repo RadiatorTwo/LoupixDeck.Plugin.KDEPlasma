@@ -36,6 +36,15 @@ internal static class KdeSettingsPage
         },
         new PluginSettingDescriptor
         {
+            Key = KdeSettingsStore.HiddenActivitiesKey,
+            Label = "Hidden Activities",
+            Kind = PluginSettingKind.Text,
+            Description = "Activities to leave out of the Activities folder and the command picker, "
+                          + "by name or id, separated by commas",
+            DefaultValue = string.Empty
+        },
+        new PluginSettingDescriptor
+        {
             Key = "__heading_behavior",
             Label = "Behaviour",
             Kind = PluginSettingKind.Heading

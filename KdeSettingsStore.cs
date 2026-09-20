@@ -13,9 +13,10 @@ internal sealed class KdeSettingsStore(IPluginSettings settings)
     public const string BridgeInstalledKey = "bridge:installed";
     public const string BridgeVersionKey = "bridge:version";
     public const string OverviewEffectKey = "display:overviewEffect";
+    public const string HiddenActivitiesKey = "display:hiddenActivities";
 
     // Reserved for later rounds so their keys cannot collide:
-    // "display:hiddenActivities", "display:monitorOrder".
+    // "display:monitorOrder".
 
     /// <summary>The Overview effect a fresh installation uses, and the fallback for a bad value.</summary>
     public const string DefaultOverviewEffect = OverviewEffects.Overview;
@@ -50,6 +51,27 @@ internal sealed class KdeSettingsStore(IPluginSettings settings)
             string stored = settings.Get(OverviewEffectKey, DefaultOverviewEffect) ?? DefaultOverviewEffect;
             return OverviewEffects.Normalize(stored);
         }
+    }
+
+    /// <summary>
+    /// The Activities the user does not want to see, by name or by id. Absent in an older settings
+    /// file, which reads as an empty list and therefore hides nothing.
+    /// </summary>
+    public IReadOnlyList<string> HiddenActivities => KdeSettingsList.Parse(settings.Get(HiddenActivitiesKey, string.Empty));
+
+    /// <summary>Whether an Activity is hidden from the folder and the command picker.</summary>
+    public bool IsActivityHidden(KdeActivity activity)
+    {
+        foreach (string entry in HiddenActivities)
+        {
+            if (string.Equals(entry, activity.Id, StringComparison.Ordinal)
+                || string.Equals(entry, activity.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>Whether the user installed the KWin bridge script. Absent in an older file, which
