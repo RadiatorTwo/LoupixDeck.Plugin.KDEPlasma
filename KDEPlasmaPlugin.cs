@@ -32,8 +32,20 @@ public sealed class KDEPlasmaPlugin : LoupixPlugin, IMenuContributor, IPluginSet
         Version = new Version(1, 2, 0),
         SdkVersion = SdkInfo.Version,
         Author = "RadiatorTwo",
-        Description = "KDE Plasma desktop control: virtual desktops, window actions, Activities, Overview, Night Color and session commands."
+        Description = "KDE Plasma desktop control: virtual desktops, window actions, Activities, Overview, Night Color and session commands.",
+        Icon = LoadIcon()
     };
+
+    /// <summary>The plugin icon (icon.png, embedded). Missing data only costs the icon.</summary>
+    private static byte[]? LoadIcon()
+    {
+        using Stream? stream = typeof(KDEPlasmaPlugin).Assembly.GetManifestResourceStream("LoupixDeck.Plugin.KDEPlasma.icon.png");
+        if (stream == null) return null;
+
+        using MemoryStream buffer = new();
+        stream.CopyTo(buffer);
+        return buffer.ToArray();
+    }
 
     public override void Initialize(IPluginHost host)
     {
